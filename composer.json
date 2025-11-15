@@ -1,0 +1,56 @@
+{
+    "name": "visiosoft/mutabakat",
+    "description": "A FilamentPHP 3 plugin for managing mutabakat (reconciliation) records",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "VisioSoft",
+            "email": "info@visiosoft.com.tr"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "filament/filament": "^3.0",
+        "illuminate/contracts": "^11.0|^12.0",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.13",
+        "nunomaduro/collision": "^8.0",
+        "orchestra/testbench": "^9.0",
+        "pestphp/pest": "^2.34",
+        "pestphp/pest-plugin-laravel": "^2.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Visiosoft\\Mutabakat\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Visiosoft\\Mutabakat\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Visiosoft\\Mutabakat\\MutabakatServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
