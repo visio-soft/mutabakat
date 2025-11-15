@@ -13,4 +13,5 @@ vendor
 node_modules
 *.cache
 .DS_Store
-.phpunit.cache
+.php-cs-fixer.cache
+.php_cs.cache

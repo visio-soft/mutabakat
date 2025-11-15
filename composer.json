@@ -48,7 +48,10 @@
         "laravel": {
             "providers": [
                 "Visiosoft\\Mutabakat\\MutabakatServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "Mutabakat": "Visiosoft\\Mutabakat\\Facades\\Mutabakat"
+            }
         }
     },
     "minimum-stability": "dev",
