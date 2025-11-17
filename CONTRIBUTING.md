@@ -20,10 +20,4 @@ We accept contributions via Pull Requests on [Github](https://github.com/visio-s
 - We use [Laravel Pint](https://laravel.com/docs/pint) for code formatting.
 - Run `composer format` before committing to ensure your code follows our standards.
 
-## Running Tests
-
-```bash
-composer test
-```
-
 **Happy coding**!
