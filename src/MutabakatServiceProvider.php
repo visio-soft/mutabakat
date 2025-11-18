@@ -25,6 +25,7 @@ class MutabakatServiceProvider extends PackageServiceProvider
         $package->name(static::$name)
             ->hasConfigFile()
             ->hasMigration('create_mutabakat_table')
+            ->hasMigration('create_hgs_transactions_table')
             ->hasCommand(MutabakatCommand::class);
     }
 
