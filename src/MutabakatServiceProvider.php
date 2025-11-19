@@ -24,8 +24,6 @@ class MutabakatServiceProvider extends PackageServiceProvider
     {
         $package->name(static::$name)
             ->hasConfigFile()
-            ->hasMigration('create_mutabakat_table')
-            ->hasMigration('create_hgs_transactions_table')
             ->hasCommand(MutabakatCommand::class);
     }
 
@@ -49,6 +47,11 @@ class MutabakatServiceProvider extends PackageServiceProvider
 
         // Icon Registration
         FilamentIcon::register($this->getIcons());
+
+        // Load migrations
+        if ($this->app->runningInConsole()) {
+            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        }
 
         // Handle Stubs
         if (app()->runningInConsole()) {

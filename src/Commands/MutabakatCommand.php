@@ -18,11 +18,8 @@ class MutabakatCommand extends Command
             '--tag' => 'mutabakat-config',
         ]);
 
-        $this->call('vendor:publish', [
-            '--tag' => 'mutabakat-migrations',
-        ]);
-
         $this->info('Mutabakat plugin installed successfully!');
+        $this->info('Run "php artisan migrate" to create the database tables.');
 
         return self::SUCCESS;
     }

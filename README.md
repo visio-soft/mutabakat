@@ -29,19 +29,13 @@ You can install the package via composer:
 composer require visiosoft/mutabakat
 ```
 
-Run the installation command:
-
-```bash
-php artisan mutabakat:install
-```
-
-This will publish the configuration file and migrations.
-
 Run the migrations:
 
 ```bash
 php artisan migrate
 ```
+
+The migrations will be automatically loaded from the package.
 
 ## Usage
 

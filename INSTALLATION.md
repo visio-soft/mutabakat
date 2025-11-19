@@ -19,24 +19,22 @@ Install the package using Composer:
 composer require visiosoft/mutabakat
 ```
 
-## Step 2: Run Installation Command
+## Step 2: Run Migrations
 
-Run the installation command to publish the configuration and migration files:
-
-```bash
-php artisan mutabakat:install
-```
-
-This command will:
-- Publish the configuration file to `config/mutabakat.php`
-- Publish the migration file to your `database/migrations` directory
-
-## Step 3: Run Migrations
-
-Execute the migrations to create the `mutabakat` table:
+Execute the migrations to create the database tables. The migrations are automatically loaded from the package:
 
 ```bash
 php artisan migrate
+```
+
+This will create the `mutabakat` and `hgs_transactions` tables.
+
+## Step 3: Publish Configuration (Optional)
+
+If you want to customize the plugin configuration, you can publish the config file:
+
+```bash
+php artisan vendor:publish --tag=mutabakat-config
 ```
 
 ## Step 4: Register the Plugin
