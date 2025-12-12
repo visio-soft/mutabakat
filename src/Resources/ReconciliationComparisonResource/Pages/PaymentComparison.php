@@ -102,8 +102,6 @@ class PaymentComparison extends Page implements HasTable, HasInfolists
                     ->options([
                         'HGS' => 'HGS',
                         'POS' => 'POS',
-                        'BANKA' => 'Banka Transferi',
-                        'BEYAZ LİSTE' => 'Beyaz Liste',
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         $paymentType = $data['value'] ?? null;
