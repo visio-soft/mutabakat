@@ -8,13 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('mutabakat', function (Blueprint $table) {
+        Schema::create('reconciliations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('park_id')->nullable();
             $table->string('row_hash')->nullable()->index();
             $table->date('provision_date')->nullable();
             $table->string('company')->nullable();
             $table->string('parking_name')->nullable();
+            $table->string('parent_parking_name')->nullable();
             $table->string('transaction_name')->nullable();
             $table->integer('transaction_count')->default(0);
             $table->decimal('total_amount', 15, 2)->default(0);
@@ -29,6 +30,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('mutabakat');
+        Schema::dropIfExists('reconciliations');
     }
 };

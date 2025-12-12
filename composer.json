@@ -1,6 +1,6 @@
 {
-    "name": "visiosoft/mutabakat",
-    "description": "A FilamentPHP 3 plugin for managing mutabakat (reconciliation) records",
+    "name": "visiosoft/reconciliation",
+    "description": "A FilamentPHP 3 plugin for managing reconciliation records",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -20,7 +20,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Visiosoft\\Mutabakat\\": "src/"
+            "Visiosoft\\Reconciliation\\": "src/"
         }
     },
     "scripts": {
@@ -35,10 +35,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Visiosoft\\Mutabakat\\MutabakatServiceProvider"
+                "Visiosoft\\Reconciliation\\ReconciliationServiceProvider"
             ],
             "aliases": {
-                "Mutabakat": "Visiosoft\\Mutabakat\\Facades\\Mutabakat"
+                "Reconciliation": "Visiosoft\\Reconciliation\\Facades\\Reconciliation"
             }
         }
     },

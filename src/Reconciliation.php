@@ -1,8 +1,8 @@
 <?php
 
-namespace Visiosoft\Mutabakat;
+namespace Visiosoft\Reconciliation;
 
-class Mutabakat
+class Reconciliation
 {
     public function version(): string
     {

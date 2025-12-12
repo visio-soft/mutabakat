@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('hgs_transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('park_id')->nullable()->constrained('parks')->onDelete('set null');
-            $table->foreignId('matched_session_id')->nullable()->constrained('park_sessions')->onDelete('set null');
+            $table->unsignedBigInteger('park_id')->nullable();
+            $table->unsignedBigInteger('matched_session_id')->nullable();
             $table->datetime('provision_date')->nullable();
             $table->date('payment_date')->nullable();
             $table->datetime('entry_date')->nullable();

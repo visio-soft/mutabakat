@@ -1,19 +1,18 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\HGSTransactionResource\Pages;
+namespace Visiosoft\Reconciliation\Resources\ReconciliationResource\Pages;
 
+use Visiosoft\Reconciliation\Resources\ReconciliationResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Visiosoft\Mutabakat\Resources\HGSTransactionResource;
 
-class EditHGSTransaction extends EditRecord
+class EditReconciliation extends EditRecord
 {
-    protected static string $resource = HGSTransactionResource::class;
+    protected static string $resource = ReconciliationResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make(),
             Actions\DeleteAction::make(),
             Actions\ForceDeleteAction::make(),
             Actions\RestoreAction::make(),
