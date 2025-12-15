@@ -2,13 +2,15 @@
 
 namespace Visiosoft\Mutabakat\Models;
 
+use App\Models\Park;
+use App\Models\ParkSession;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class HGSTransaction extends Model
+class HgsParkTransaction extends Model
 {
     use HasFactory;
     use SoftDeletes;
@@ -33,6 +35,7 @@ class HGSTransaction extends Model
         'commission_amount',
         'net_transfer_amount',
         'row_hash',
+        'is_matched',
     ];
 
     protected $casts = [
@@ -43,6 +46,7 @@ class HGSTransaction extends Model
         'amount' => 'decimal:2',
         'commission_amount' => 'decimal:2',
         'net_transfer_amount' => 'decimal:2',
+        'is_matched' => 'boolean',
     ];
 
     public function park(): BelongsTo
@@ -50,9 +54,17 @@ class HGSTransaction extends Model
         return $this->belongsTo(Park::class);
     }
 
-    public function matchedSession(): BelongsTo
+    public function parkSession(): BelongsTo
     {
         return $this->belongsTo(ParkSession::class, 'matched_session_id');
+    }
+
+    public static function getByParkAndProvisionDate(int $parkId, $provisionDate): \Illuminate\Support\Collection
+    {
+        return static::query()
+            ->where('park_id', $parkId)
+            ->whereDate('provision_date', $provisionDate)
+            ->get();
     }
 
     public static function reportQuery(array $options): Builder
@@ -70,6 +82,11 @@ class HGSTransaction extends Model
             ->orderBy('entry_date', 'asc');
 
         return $query;
+    }
+
+    public static function existsByRowHash(string $rowHash): bool
+    {
+        return static::query()->where('row_hash', $rowHash)->exists();
     }
 
     /**

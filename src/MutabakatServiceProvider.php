@@ -8,11 +8,14 @@ use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentIcon;
 use Illuminate\Filesystem\Filesystem;
+use Livewire\Livewire;
 use Livewire\Features\SupportTesting\Testable;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Visiosoft\Mutabakat\Commands\MutabakatCommand;
+use Visiosoft\Mutabakat\Resources\MutabakatResource\Widgets\MutabakatStats;
+use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
+use Visiosoft\Mutabakat\Resources\HGSParkTransactionResource\Widgets\HgsParkTransactionStatsWidget;
 
 class MutabakatServiceProvider extends PackageServiceProvider
 {
@@ -24,7 +27,7 @@ class MutabakatServiceProvider extends PackageServiceProvider
     {
         $package->name(static::$name)
             ->hasConfigFile()
-            ->hasCommand(MutabakatCommand::class);
+            ->hasViews(static::$viewNamespace);
     }
 
     public function packageRegistered(): void
@@ -34,7 +37,10 @@ class MutabakatServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
-        // Asset Registration
+        Livewire::component('visiosoft.mutabakat.resources.mutabakat-resource.widgets.mutabakat-stats', MutabakatStats::class);
+        Livewire::component('visiosoft.mutabakat.resources.mutabakat-comparison-resource.widgets.comparison-stats-widget', ComparisonStatsWidget::class);
+        Livewire::component('visiosoft.mutabakat.resources.h-g-s-park-transaction-resource.widgets.hgs-park-transaction-stats-widget', HgsParkTransactionStatsWidget::class);
+
         FilamentAsset::register(
             $this->getAssets(),
             $this->getAssetPackageName()
@@ -45,15 +51,12 @@ class MutabakatServiceProvider extends PackageServiceProvider
             $this->getAssetPackageName()
         );
 
-        // Icon Registration
         FilamentIcon::register($this->getIcons());
 
-        // Load migrations
         if ($this->app->runningInConsole()) {
             $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         }
 
-        // Handle Stubs
         if (app()->runningInConsole()) {
             foreach (app(Filesystem::class)->files(__DIR__ . '/../stubs/') as $file) {
                 $this->publishes([
@@ -85,9 +88,7 @@ class MutabakatServiceProvider extends PackageServiceProvider
      */
     protected function getCommands(): array
     {
-        return [
-            MutabakatCommand::class,
-        ];
+        return [];
     }
 
     /**

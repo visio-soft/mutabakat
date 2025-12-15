@@ -2,9 +2,9 @@
 
 namespace Visiosoft\Mutabakat\Resources\MutabakatResource\Pages;
 
+use Visiosoft\Mutabakat\Resources\MutabakatResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Visiosoft\Mutabakat\Resources\MutabakatResource;
 
 class EditMutabakat extends EditRecord
 {

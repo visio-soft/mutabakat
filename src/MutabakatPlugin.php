@@ -4,7 +4,8 @@ namespace Visiosoft\Mutabakat;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
-use Visiosoft\Mutabakat\Resources\HGSTransactionResource;
+use Visiosoft\Mutabakat\Resources\HGSParkTransactionResource;
+use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
 use Visiosoft\Mutabakat\Resources\MutabakatResource;
 
 class MutabakatPlugin implements Plugin
@@ -19,7 +20,8 @@ class MutabakatPlugin implements Plugin
         $panel
             ->resources([
                 MutabakatResource::class,
-                HGSTransactionResource::class,
+                MutabakatComparisonResource::class,
+                HGSParkTransactionResource::class,
             ]);
     }
 

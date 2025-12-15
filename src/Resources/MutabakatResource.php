@@ -4,9 +4,14 @@ namespace Visiosoft\Mutabakat\Resources;
 
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
+use Visiosoft\Mutabakat\Enums\FinanceAgreementEnum;
 use Visiosoft\Mutabakat\Models\Mutabakat;
 use Visiosoft\Mutabakat\Resources\MutabakatResource\Pages;
 
@@ -14,74 +19,40 @@ class MutabakatResource extends Resource
 {
     protected static ?string $model = Mutabakat::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationLabel = 'Mutabakat';
+    protected static ?int $navigationSort = -2;
+
+    protected static ?string $navigationGroup = 'Mutabakat';
+
+    protected static ?string $pluralModelLabel = "Hgs'den Gelen Raporları";
 
     protected static ?string $modelLabel = 'Mutabakat';
-
-    protected static ?string $pluralModelLabel = 'Mutabakat';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Genel Bilgiler')
-                    ->schema([
-                        Forms\Components\TextInput::make('park_id')
-                            ->label('Park ID')
-                            ->numeric(),
-                        Forms\Components\TextInput::make('row_hash')
-                            ->label('Row Hash')
-                            ->maxLength(255),
-                        Forms\Components\DatePicker::make('provision_date')
-                            ->label('Provision Date'),
-                        Forms\Components\TextInput::make('company')
-                            ->label('Company')
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('parking_name')
-                            ->label('Parking Name')
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('transaction_name')
-                            ->label('Transaction Name')
-                            ->maxLength(255),
-                    ])->columns(2),
-
-                Forms\Components\Section::make('Finansal Bilgiler')
-                    ->schema([
-                        Forms\Components\TextInput::make('transaction_count')
-                            ->label('Transaction Count')
-                            ->numeric()
-                            ->default(0),
-                        Forms\Components\TextInput::make('total_amount')
-                            ->label('Total Amount')
-                            ->numeric()
-                            ->prefix('₺')
-                            ->default(0),
-                        Forms\Components\TextInput::make('commission_amount')
-                            ->label('Commission Amount')
-                            ->numeric()
-                            ->prefix('₺')
-                            ->default(0),
-                        Forms\Components\TextInput::make('net_transfer_amount')
-                            ->label('Net Transfer Amount')
-                            ->numeric()
-                            ->prefix('₺')
-                            ->default(0),
-                    ])->columns(2),
-
-                Forms\Components\Section::make('Durum ve Tarihler')
-                    ->schema([
-                        Forms\Components\DatePicker::make('payment_date')
-                            ->label('Payment Date'),
-                        Forms\Components\Select::make('status')
-                            ->label('Status')
-                            ->options([
-                                'pending' => 'Pending',
-                                'completed' => 'Completed',
-                                'cancelled' => 'Cancelled',
-                            ]),
-                    ])->columns(2),
+                Forms\Components\TextInput::make('row_hash')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\DateTimePicker::make('provision_date'),
+                Forms\Components\TextInput::make('parking_name')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('parent_parking_name')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('transaction_name')
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('transaction_count')
+                    ->numeric(),
+                Forms\Components\TextInput::make('total_amount')
+                    ->numeric(),
+                Forms\Components\TextInput::make('commission_amount')
+                    ->numeric(),
+                Forms\Components\TextInput::make('net_transfer_amount')
+                    ->numeric(),
+                Forms\Components\TextInput::make('payment_date')
+                    ->maxLength(255),
             ]);
     }
 
@@ -89,88 +60,138 @@ class MutabakatResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
+                Tables\Columns\TextColumn::make('provision_date')
+                    ->label('Provizyon Tarihi')
+                    ->dateTime('d-m-Y')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('park_id')
-                    ->label('Park ID')
-                    ->sortable()
+                Tables\Columns\TextColumn::make('park.name')
+                    ->label('Park Adı')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('company')
-                    ->label('Company')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('parking_name')
-                    ->label('Parking Name')
-                    ->searchable()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('transaction_name')
-                    ->label('Transaction Name')
+                    ->label('İşlem Adı')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('transaction_count')
-                    ->label('Count')
+                    ->label('İşlem Adedi')
+                    ->numeric()
                     ->sortable()
-                    ->alignEnd(),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Toplam')),
                 Tables\Columns\TextColumn::make('total_amount')
-                    ->label('Total')
-                    ->money('TRY')
+                    ->label('Toplam Tutar')
+                    ->formatStateUsing(
+                        fn (?float $state): ?string => is_numeric($state)
+                            ? '₺'.number_format($state, ($state == (int) $state) ? 0 : 2, ',', '.')
+                            : null
+                    )
                     ->sortable()
-                    ->alignEnd(),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->money('TRY')->label('Toplam')),
                 Tables\Columns\TextColumn::make('commission_amount')
-                    ->label('Commission')
-                    ->money('TRY')
+                    ->label('HGS Komisyon Tutarı')
+                    ->formatStateUsing(
+                        fn (?float $state): ?string => is_numeric($state)
+                            ? '₺'.number_format($state, ($state == (int) $state) ? 0 : 2, ',', '.')
+                            : null
+                    )
                     ->sortable()
-                    ->alignEnd(),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->money('TRY')->label('Toplam')),
                 Tables\Columns\TextColumn::make('net_transfer_amount')
-                    ->label('Net Transfer')
-                    ->money('TRY')
+                    ->label('Ödenecek Tutar')
+                    ->formatStateUsing(
+                        fn (?float $state): ?string => is_numeric($state)
+                            ? '₺'.number_format($state, ($state == (int) $state) ? 0 : 2, ',', '.')
+                            : null
+                    )
                     ->sortable()
-                    ->alignEnd(),
-                Tables\Columns\TextColumn::make('provision_date')
-                    ->label('Provision Date')
-                    ->date()
-                    ->sortable(),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->money('TRY')->label('Toplam')),
                 Tables\Columns\TextColumn::make('payment_date')
-                    ->label('Payment Date')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('Status')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'completed',
-                        'danger' => 'cancelled',
-                    ]),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created At')
+                    ->dateTime('d-m-Y')
+                    ->label('Tetra Ödeme Tarihi')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Durum')
+                    ->sortable()
+                    ->badge(),
+                Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()
+                    ->label('Silinme Tarihi')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->label('Oluşturulma Tarihi')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Updated At')
                     ->dateTime()
+                    ->label('Güncellenme Tarihi')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('Status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
-                    ]),
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\SelectFilter::make('parent_parking_name')
+                    ->label('Otopark Adı')
+                    ->options(Mutabakat::getParentParkingNameOptions())
+                    ->searchable()
+                    ->multiple(false)
+                    ->preload(false),
+                DateRangeFilter::make('provision_date')
+                    ->label('Provizyon Tarih Aralığı')
+                    ->useColumn('provision_date'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\Action::make('detail')
+                    ->label('Detay')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->url(function (Mutabakat $record): string {
+                        $provisionDate = $record->provision_date->format('d/m/Y');
+                        $dateRange = $provisionDate.' - '.$provisionDate;
+
+                        return HGSParkTransactionResource::getUrl('index', [
+                            'tableFilters[park_id][value]' => $record->park_id,
+                            'tableFilters[provision_date][provision_date]' => $dateRange,
+                        ]);
+                    })
+                    ->openUrlInNewTab(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\BulkAction::make('changeStatus')
+                        ->label('Durum Değiştir')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('warning')
+                        ->form([
+                            Forms\Components\Select::make('status')
+                                ->label('Yeni Durum')
+                                ->options([
+                                    FinanceAgreementEnum::Waiting->value => FinanceAgreementEnum::Waiting->getLabel(),
+                                    FinanceAgreementEnum::Done->value => FinanceAgreementEnum::Done->getLabel(),
+                                    FinanceAgreementEnum::InProgress->value => FinanceAgreementEnum::InProgress->getLabel(),
+                                ])
+                                ->required()
+                                ->placeholder('Durum seçiniz'),
+                        ])
+                        ->action(function (array $data, $records) {
+                            $count = 0;
+                            foreach ($records as $record) {
+                                $record->update(['status' => $data['status']]);
+                                $count++;
+                            }
+
+                            $statusLabel = FinanceAgreementEnum::from($data['status'])->getLabel();
+
+                            Notification::make()
+                                ->title('Durum Güncellendi')
+                                ->body("{$count} kayıt için durum '{$statusLabel}' olarak güncellendi.")
+                                ->success()
+                                ->send();
+                        })
+                        ->requiresConfirmation()
+                        ->modalHeading('Durum Değiştir')
+                        ->modalDescription('Seçilen kayıtların durumunu değiştirmek istediğinizden emin misiniz?')
+                        ->modalSubmitActionLabel('Evet, Değiştir'),
                 ]),
             ]);
     }
@@ -179,8 +200,15 @@ class MutabakatResource extends Resource
     {
         return [
             'index' => Pages\ListMutabakat::route('/'),
-            'create' => Pages\CreateMutabakat::route('/create'),
-            'edit' => Pages\EditMutabakat::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ])
+            ->notDone();
     }
 }

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->date('provision_date')->nullable();
             $table->string('company')->nullable();
             $table->string('parking_name')->nullable();
+            $table->string('parent_parking_name')->nullable();
             $table->string('transaction_name')->nullable();
             $table->integer('transaction_count')->default(0);
             $table->decimal('total_amount', 15, 2)->default(0);

@@ -1,6 +1,6 @@
 {
     "name": "visiosoft/mutabakat",
-    "description": "A FilamentPHP 3 plugin for managing mutabakat (reconciliation) records",
+    "description": "A FilamentPHP 3 plugin for managing mutabakat records",
     "type": "library",
     "license": "MIT",
     "authors": [
