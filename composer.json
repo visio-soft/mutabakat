@@ -1,5 +1,5 @@
 {
-    "name": "visiosoft/mutabakat",
+    "name": "visio/mutabakat",
     "description": "A FilamentPHP 3 plugin for managing mutabakat records",
     "type": "library",
     "license": "MIT",
