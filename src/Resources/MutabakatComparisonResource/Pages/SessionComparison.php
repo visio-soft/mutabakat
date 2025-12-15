@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource\Pages;
+namespace Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
 
 use App\Enums\PaymentMethodEnum;
 use App\Filament\Admin\Resources\ParkSessionResource;
@@ -15,23 +15,24 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Support\Collection;
-use Visiosoft\Reconciliation\Models\HgsParkTransaction;
-use Visiosoft\Reconciliation\Models\Reconciliation;
-use Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource;
+use Visiosoft\Mutabakat\Enums\PaymentTypeEnum;
+use Visiosoft\Mutabakat\Models\HgsParkTransaction;
+use Visiosoft\Mutabakat\Models\Mutabakat;
+use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
 
 class SessionComparison extends Page implements HasInfolists, HasTable
 {
     use InteractsWithInfolists, InteractsWithTable;
 
-    protected static string $resource = ReconciliationComparisonResource::class;
+    protected static string $resource = MutabakatComparisonResource::class;
 
-    protected static string $view = 'reconciliation::pages.session-comparison';
+    protected static string $view = 'mutabakat::pages.session-comparison';
 
-    public Reconciliation $record;
+    public Mutabakat $record;
 
     public Collection $hgsTransactions;
 
-    public function mount(Reconciliation $record): void
+    public function mount(Mutabakat $record): void
     {
         $this->record = $record;
         $this->hgsTransactions = HgsParkTransaction::getByParkAndProvisionDate(
@@ -80,10 +81,8 @@ class SessionComparison extends Page implements HasInfolists, HasTable
                     })
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'HGS' => 'success',
-                        'POS' => 'info',
-                        'BANKA' => 'warning',
-                        'BEYAZ LİSTE' => 'gray',
+                        PaymentTypeEnum::HGS->value => 'success',
+                        PaymentTypeEnum::POS->value => 'info',
                         default => 'secondary',
                     }),
                 Tables\Columns\TextColumn::make('entry_at')
@@ -121,7 +120,7 @@ class SessionComparison extends Page implements HasInfolists, HasTable
                             return 0;
                         }
 
-                        return Reconciliation::findMatchingHgsTransaction($record, $this->hgsTransactions)?->amount ?? 0;
+                        return Mutabakat::findMatchingHgsTransaction($record, $this->hgsTransactions)?->amount ?? 0;
                     })
                     ->money('TRY')
                     ->alignCenter()
@@ -138,7 +137,7 @@ class SessionComparison extends Page implements HasInfolists, HasTable
                         if ($this->isNonHgsPayment($record)) {
                             return 'Eşleşti';
                         }
-                        $matchingHgs = Reconciliation::findMatchingHgsTransaction($record, $this->hgsTransactions);
+                        $matchingHgs = Mutabakat::findMatchingHgsTransaction($record, $this->hgsTransactions);
                         if (! $matchingHgs) {
                             return 'Oturum Detayına Git';
                         }
@@ -155,7 +154,7 @@ class SessionComparison extends Page implements HasInfolists, HasTable
                             return null;
                         }
 
-                        $matchingHgs = Reconciliation::findMatchingHgsTransaction($record, $this->hgsTransactions);
+                        $matchingHgs = Mutabakat::findMatchingHgsTransaction($record, $this->hgsTransactions);
                         if ($matchingHgs && abs($record->amount - ($matchingHgs->amount ?? 0)) < 1) {
                             return null;
                         }

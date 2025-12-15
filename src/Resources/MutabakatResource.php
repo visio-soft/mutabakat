@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Resources;
+namespace Visiosoft\Mutabakat\Resources;
 
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -11,13 +11,13 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use Visiosoft\Reconciliation\Enums\FinanceAgreementEnum;
-use Visiosoft\Reconciliation\Models\Reconciliation;
-use Visiosoft\Reconciliation\Resources\ReconciliationResource\Pages;
+use Visiosoft\Mutabakat\Enums\FinanceAgreementEnum;
+use Visiosoft\Mutabakat\Models\Mutabakat;
+use Visiosoft\Mutabakat\Resources\MutabakatResource\Pages;
 
-class ReconciliationResource extends Resource
+class MutabakatResource extends Resource
 {
-    protected static ?string $model = Reconciliation::class;
+    protected static ?string $model = Mutabakat::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -129,7 +129,7 @@ class ReconciliationResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('parent_parking_name')
                     ->label('Otopark Adı')
-                    ->options(Reconciliation::getParentParkingNameOptions())
+                    ->options(Mutabakat::getParentParkingNameOptions())
                     ->searchable()
                     ->multiple(false)
                     ->preload(false),
@@ -142,7 +142,7 @@ class ReconciliationResource extends Resource
                     ->label('Detay')
                     ->icon('heroicon-o-eye')
                     ->color('info')
-                    ->url(function (Reconciliation $record): string {
+                    ->url(function (Mutabakat $record): string {
                         $provisionDate = $record->provision_date->format('d/m/Y');
                         $dateRange = $provisionDate.' - '.$provisionDate;
 
@@ -199,7 +199,7 @@ class ReconciliationResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListReconciliation::route('/'),
+            'index' => Pages\ListMutabakat::route('/'),
         ];
     }
 

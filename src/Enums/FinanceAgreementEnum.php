@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Enums;
+namespace Visiosoft\Mutabakat\Enums;
 
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;

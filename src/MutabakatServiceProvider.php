@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Reconciliation;
+namespace Visiosoft\Mutabakat;
 
 use Filament\Support\Assets\Asset;
 use Filament\Support\Assets\Css;
@@ -13,15 +13,15 @@ use Livewire\Features\SupportTesting\Testable;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Visiosoft\Reconciliation\Resources\ReconciliationResource\Widgets\ReconciliationStats;
-use Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource\Widgets\ComparisonStatsWidget;
-use Visiosoft\Reconciliation\Resources\HGSParkTransactionResource\Widgets\HgsParkTransactionStatsWidget;
+use Visiosoft\Mutabakat\Resources\MutabakatResource\Widgets\MutabakatStats;
+use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
+use Visiosoft\Mutabakat\Resources\HGSParkTransactionResource\Widgets\HgsParkTransactionStatsWidget;
 
-class ReconciliationServiceProvider extends PackageServiceProvider
+class MutabakatServiceProvider extends PackageServiceProvider
 {
-    public static string $name = 'reconciliation';
+    public static string $name = 'mutabakat';
 
-    public static string $viewNamespace = 'reconciliation';
+    public static string $viewNamespace = 'mutabakat';
 
     public function configurePackage(Package $package): void
     {
@@ -37,9 +37,9 @@ class ReconciliationServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
-        Livewire::component('visiosoft.reconciliation.resources.reconciliation-resource.widgets.reconciliation-stats', ReconciliationStats::class);
-        Livewire::component('visiosoft.reconciliation.resources.reconciliation-comparison-resource.widgets.comparison-stats-widget', ComparisonStatsWidget::class);
-        Livewire::component('visiosoft.reconciliation.resources.h-g-s-park-transaction-resource.widgets.hgs-park-transaction-stats-widget', HgsParkTransactionStatsWidget::class);
+        Livewire::component('visiosoft.mutabakat.resources.mutabakat-resource.widgets.mutabakat-stats', MutabakatStats::class);
+        Livewire::component('visiosoft.mutabakat.resources.mutabakat-comparison-resource.widgets.comparison-stats-widget', ComparisonStatsWidget::class);
+        Livewire::component('visiosoft.mutabakat.resources.h-g-s-park-transaction-resource.widgets.hgs-park-transaction-stats-widget', HgsParkTransactionStatsWidget::class);
 
         FilamentAsset::register(
             $this->getAssets(),
@@ -60,15 +60,15 @@ class ReconciliationServiceProvider extends PackageServiceProvider
         if (app()->runningInConsole()) {
             foreach (app(Filesystem::class)->files(__DIR__ . '/../stubs/') as $file) {
                 $this->publishes([
-                    $file->getRealPath() => base_path("stubs/reconciliation/{$file->getFilename()}"),
-                ], 'reconciliation-stubs');
+                    $file->getRealPath() => base_path("stubs/mutabakat/{$file->getFilename()}"),
+                ], 'mutabakat-stubs');
             }
         }
     }
 
     protected function getAssetPackageName(): ?string
     {
-        return 'visiosoft/reconciliation';
+        return 'visiosoft/mutabakat';
     }
 
     /**

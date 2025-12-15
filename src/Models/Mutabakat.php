@@ -1,8 +1,8 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Models;
+namespace Visiosoft\Mutabakat\Models;
 
-use Visiosoft\Reconciliation\Enums\FinanceAgreementEnum;
+use Visiosoft\Mutabakat\Enums\FinanceAgreementEnum;
 use App\Traits\Query\FinancialQueryTrait;
 use App\Models\Park;
 use Illuminate\Database\Eloquent\Collection;
@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Visiosoft\Mutabakat\Models\HGSTransaction;
 
-class Reconciliation extends Model
+class Mutabakat extends Model
 {
     use SoftDeletes,FinancialQueryTrait;
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Resources\HGSParkTransactionResource\Widgets;
+namespace Visiosoft\Mutabakat\Resources\HGSParkTransactionResource\Widgets;
 
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Visiosoft\Reconciliation\Models\HgsParkTransaction;
+use Visiosoft\Mutabakat\Models\HgsParkTransaction;
 
 class HgsParkTransactionStatsWidget extends BaseWidget
 {

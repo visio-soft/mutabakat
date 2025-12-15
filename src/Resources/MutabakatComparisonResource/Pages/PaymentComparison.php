@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource\Pages;
+namespace Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
 
 use App\Enums\PaymentMethodEnum;
 use App\Models\Payment;
@@ -14,32 +14,26 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use App\Filament\Admin\Resources\PaymentResource;
-use Visiosoft\Reconciliation\Models\HgsParkTransaction;
-use Visiosoft\Reconciliation\Models\Reconciliation;
-use Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource;
+use Visiosoft\Mutabakat\Enums\PaymentTypeEnum;
+use Visiosoft\Mutabakat\Models\HgsParkTransaction;
+use Visiosoft\Mutabakat\Models\Mutabakat;
+use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
 
 class PaymentComparison extends Page implements HasTable, HasInfolists
 {
     use InteractsWithTable, InteractsWithInfolists;
 
-    protected static string $resource = ReconciliationComparisonResource::class;
+    protected static string $resource = MutabakatComparisonResource::class;
 
-    protected static string $view = 'reconciliation::pages.payment-comparison';
+    protected static string $view = 'mutabakat::pages.payment-comparison';
 
-    public Reconciliation $record;
+    public Mutabakat $record;
 
-    public Collection $hgsTransactions;
-
-    public function mount(Reconciliation $record): void
+    public function mount(Mutabakat $record): void
     {
         $this->record = $record;
-
-        $this->hgsTransactions = HgsParkTransaction::getByParkAndProvisionDate(
-            $this->record->park_id,
-            $this->record->provision_date
-        );
     }
 
     public function getTitle(): string
@@ -52,6 +46,7 @@ class PaymentComparison extends Page implements HasTable, HasInfolists
         return $table
             ->query(Payment::query()
                 ->forParkAndDate($this->record->park_id, $this->record->provision_date)
+                ->whereIn('service_id', [PaymentMethodEnum::HGS->value, PaymentMethodEnum::HGS_BACKEND->value])
                 ->with(['parkSession'])
             )
             ->columns([
@@ -97,26 +92,37 @@ class PaymentComparison extends Page implements HasTable, HasInfolists
                 $this->getMatchStatusColumn(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('payment_type')
-                    ->label('Ödeme Türü')
-                    ->options([
-                        'HGS' => 'HGS',
-                        'POS' => 'POS',
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        $paymentType = $data['value'] ?? null;
-                        if (empty($paymentType)) {
-                            return $query;
-                        }
-                        $paymentIds = match ($paymentType) {
-                            'HGS' => [PaymentMethodEnum::HGS->value, PaymentMethodEnum::HGS_BACKEND->value],
-                            default => [],
-                        };
-                        if (!empty($paymentIds)) {
-                            return $query->whereIn('service_id', $paymentIds);
-                        }
-                        return $query;
-                    }),
+               
+                Tables\Filters\TernaryFilter::make('match_status')
+                    ->label('Eşleşme Durumu')
+                    ->placeholder('Tümü')
+                    ->trueLabel('Eşleşti')
+                    ->falseLabel('Eşleşmedi')
+                    ->queries(
+                        true: function (Builder $query) {
+                            // Sadece HGS ödemeleri ve is_matched = true olan
+                            return $query->whereIn('service_id', [PaymentMethodEnum::HGS->value, PaymentMethodEnum::HGS_BACKEND->value])
+                                ->whereHas('parkSession', function ($sessionQuery) {
+                                    $sessionQuery->whereRaw('EXISTS (
+                                        SELECT 1 FROM hgs_transactions 
+                                        WHERE hgs_transactions.matched_session_id = park_sessions.id 
+                                        AND hgs_transactions.is_matched = true
+                                    )');
+                                });
+                        },
+                        false: function (Builder $query) {
+                            // Sadece HGS ödemeleri ve eşleşmemiş olanlar
+                            return $query->whereIn('service_id', [PaymentMethodEnum::HGS->value, PaymentMethodEnum::HGS_BACKEND->value])
+                                ->whereNotExists(function ($subQuery) {
+                                    $subQuery->select(DB::raw(1))
+                                        ->from('hgs_transactions')
+                                        ->join('park_sessions', 'hgs_transactions.matched_session_id', '=', 'park_sessions.id')
+                                        ->whereColumn('park_sessions.id', 'payments.park_session_id')
+                                        ->where('hgs_transactions.is_matched', true);
+                                });
+                        },
+                        blank: fn (Builder $query) => $query->whereIn('service_id', [PaymentMethodEnum::HGS->value, PaymentMethodEnum::HGS_BACKEND->value]),
+                    ),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -126,11 +132,18 @@ class PaymentComparison extends Page implements HasTable, HasInfolists
         return Tables\Columns\TextColumn::make('match_status')
             ->label('Sonuç')
             ->getStateUsing(function (Payment $record) {
-                if ($this->isNonHgsPayment($record)) {
-                    return 'Eşleşti';
+                // Park session üzerinden HGS transaction kontrolü
+                $session = $record->parkSession;
+                if (!$session) {
+                    return 'Ödeme Detayına Git';
                 }
-                $hasHgsMatch = $this->findMatchingHgsTransaction($record) !== null;
-                return $hasHgsMatch ? 'Eşleşti' : 'Ödeme Detayına Git';
+                
+                // Bu session'a ait is_matched = true olan HGS transaction var mı?
+                $hasMatchedTransaction = HgsParkTransaction::where('matched_session_id', $session->id)
+                    ->where('is_matched', true)
+                    ->exists();
+                
+                return $hasMatchedTransaction ? 'Eşleşti' : 'Ödeme Detayına Git';
             })
             ->color(fn (string $state) => $state === 'Eşleşti' ? 'success' : 'info')
             ->icon(fn (string $state) => $state === 'Eşleşti' ? 'heroicon-o-check-circle' : 'heroicon-o-arrow-top-right-on-square')
@@ -159,50 +172,6 @@ class PaymentComparison extends Page implements HasTable, HasInfolists
                 ]);
             })
             ->openUrlInNewTab();
-    }
-
-    private function isNonHgsPayment(Payment $payment): bool
-    {
-        if ($payment->service_id instanceof PaymentMethodEnum) {
-            return !in_array($payment->service_id, [PaymentMethodEnum::HGS, PaymentMethodEnum::HGS_BACKEND]);
-        }
-        
-        if (is_numeric($payment->service_id)) {
-            $paymentMethod = PaymentMethodEnum::tryFrom((int) $payment->service_id);
-            return $paymentMethod && !in_array($paymentMethod, [PaymentMethodEnum::HGS, PaymentMethodEnum::HGS_BACKEND]);
-        }
-        
-        return false;
-    }
-
-    private function findMatchingHgsTransaction(Payment $payment): ?HgsParkTransaction
-    {
-        $session = $payment->parkSession;
-        if (!$session || !$payment->plate_txt) {
-            return null;
-        }
-
-        $cleanPlate = Payment::cleanPlate($payment->plate_txt);
-        
-        return $this->hgsTransactions->first(function ($hgsTransaction) use ($cleanPlate, $session) {
-            if (Payment::cleanPlate($hgsTransaction->plate ?? '') !== $cleanPlate) {
-                return false;
-            }
-
-            if ($session->entry_at && $hgsTransaction->entry_date) {
-                if (abs($session->entry_at->diffInMinutes($hgsTransaction->entry_date)) > 5) {
-                    return false;
-                }
-            }
-            
-            if ($session->exit_at && $hgsTransaction->exit_date) {
-                if (abs($session->exit_at->diffInMinutes($hgsTransaction->exit_date)) > 5) {
-                    return false;
-                }
-            }
-            
-            return true;
-        });
     }
     
     public function summaryInfolist(Infolist $infolist): Infolist

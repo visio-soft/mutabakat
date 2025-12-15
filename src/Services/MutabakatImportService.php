@@ -1,16 +1,16 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Services;
+namespace Visiosoft\Mutabakat\Services;
 
 use App\Models\Park;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Visiosoft\Reconciliation\Models\HgsParkTransaction;
-use Visiosoft\Reconciliation\Models\Reconciliation;
+use Visiosoft\Mutabakat\Models\HgsParkTransaction;
+use Visiosoft\Mutabakat\Models\Mutabakat;
 
-class ReconciliationImportService
+class MutabakatImportService
 {
     private array $allowedHeaders = [
         'Provizyon Tarihi', 'Otopark Adı', 'Bağlı Otopark Adı', 'İşlem Adı', 'İşlem Adedi',
@@ -23,8 +23,6 @@ class ReconciliationImportService
         'Açıklama', 'Referans Numarası', 'Tutar', 'Komisyon Tutarı', 'Otoparka Aktarılacak Tutar',
     ];
 
-    // Park önbelleği kaldırılmıştır. Gerekirse Park::all() metodu optimize edilebilir.
-
     public function processXlsxFile($filePath): array
     {
         try {
@@ -34,6 +32,15 @@ class ReconciliationImportService
                 return [
                     'status' => 'error',
                     'errors' => ['Dosya bulunamadı. Dosya yolu: '.($filePath ?? 'null')],
+                ];
+            }
+
+            // XLSX formatı kontrolü
+            $fileExtension = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+            if ($fileExtension !== 'xlsx') {
+                return [
+                    'status' => 'error',
+                    'errors' => ['Sadece XLSX formatındaki dosyalar kabul edilir. Gönderilen dosya formatı: '.$fileExtension],
                 ];
             }
 
@@ -91,6 +98,11 @@ class ReconciliationImportService
                     if (empty($validationErrors)) {
                         $parkSessionResult = $this->processParkSessionRows($parkSessionRows, $parkSessionHeaders);
                         $results['park_sessions'] = array_merge($results['park_sessions'], $parkSessionResult);
+                        
+                        // İmport sonrası eşleştirme yap
+                        if ($results['park_sessions']['imported'] > 0) {
+                            $this->matchHgsTransactionsWithSessions();
+                        }
                     } else {
                         $results['park_sessions']['errors'] = $validationErrors;
                     }
@@ -137,7 +149,7 @@ class ReconciliationImportService
 
         if (is_numeric($date) && $date > 20000 && $date < 90000) {
             $unix = ($date - 25569) * 86400;
-            $dt = new \DateTime('@'.($unix + 10800)); // +3 saat ekleme
+            $dt = new \DateTime('@'.($unix + 10800));
             $dt->setTimezone(new \DateTimeZone('Europe/Istanbul'));
 
             return $dt->format('Y-m-d');
@@ -205,12 +217,8 @@ class ReconciliationImportService
                 } elseif (isset($cell->is->t)) {
                     $value = (string) $cell->is->t;
                 }
-                // Hücre pozisyonunu doğru tutmak için boş hücrelere de boş string ekle
-                // Ancak Excel okuyucular boş hücreleri atlayarak sadece dolu hücreleri verir.
-                // Basit XML okuma ile sütun indeksini korumak zor olduğu için sadece değerleri alıyoruz.
                 $rowData[] = trim($value);
             }
-            // Tüm hücreleri boş olan satırları filtrele
             if (! empty(array_filter($rowData, fn ($cell) => ! empty(trim($cell))))) {
                 $rows[] = $rowData;
             }
@@ -228,7 +236,7 @@ class ReconciliationImportService
             }
         }
 
-        return 0; // Başlık satırı bulunamazsa ilk satırdan başla varsayımı
+        return 0;
     }
 
     private function findHeaders(array $rows, array $searchKeys = ['Provizyon Tarihi', 'Otopark Adı', 'İşlem Adı']): ?array
@@ -314,12 +322,12 @@ class ReconciliationImportService
                     continue;
                 }
 
-                if (Reconciliation::existsByRowHash($rowHash)) {
+                if (Mutabakat::existsByRowHash($rowHash)) {
                     $results['duplicates']++;
 
                     continue;
                 }
-                Reconciliation::create($data);
+                Mutabakat::create($data);
                 $results['imported']++;
 
             } catch (\Exception $e) {
@@ -612,160 +620,71 @@ class ReconciliationImportService
             && strlen(substr($value, strpos($value, ',') + 1)) <= 2;
     }
 
-    private function normalizeForDirectComparison(string $str): string
-    {
-        $str = mb_strtolower(trim($str), 'UTF-8');
-        $str = preg_replace("/[^\p{L}\p{N}\s]/u", '', $str);
-        $str = preg_replace("/^toger park\s*/i", '', $str);
-        $str = str_replace(['cem evi', 'cemevi'], 'cemevi', $str);
-        $str = str_replace(['triko center', 'trikocenter'], 'trikocenter', $str);
-        $str = preg_replace('/(\d+)\s*(matbaacılar|matbaacilar)/iu', '$1matbaacilar', $str);
-        $str = preg_replace('/(matbaacılar|matbaacilar)\s*(\d+)/iu', '$2matbaacilar', $str);
-        $str = preg_replace('/vaditepe\s*(avm|gölevleri|golevleri)?/iu', 'vaditepe', $str);
-
-        $removeWords = ['otoparkı', 'otopark', 'sitesi', 'sanayi', 'avm', 'gölevleri', 'golevleri'];
-        foreach ($removeWords as $word) {
-            $str = preg_replace('/\b'.preg_quote($word, '/').'\b/iu', '', $str);
-        }
-
-        return preg_replace('/\s+/', ' ', trim($str));
-    }
-
-    private function normalizeForWordAnalysis(string $str): string
-    {
-        $str = $this->normalizeForDirectComparison($str);
-
-        $stopWords = [
-            'otoparkı', 'otopark', 'parkı', 'park', 'açık', 'kapalı', 'isparta',
-            'no', 'katlı', 'zemin', 'bodrum', 'araç', 'sitesi', 'sanayi', 'avm',
-        ];
-        $str = preg_replace("/\b(".implode('|', $stopWords).")\b/u", '', $str);
-
-        $suffixes = [
-            'ı', 'i', 'u', 'ü', 'ın', 'in', 'un', 'ün', 'a', 'e', 'da', 'de', 'ta', 'te', 'dan', 'den',
-            'tan', 'ten', 'sı', 'si', 'su', 'sü', 'na', 'ne', 'nda', 'nde',
-        ];
-        $words = explode(' ', $str);
-        $stemmedWords = [];
-        foreach ($words as $word) {
-            if (mb_strlen($word) > 3) {
-                $word = preg_replace('/('.implode('|', $suffixes).')$/u', '', $word);
-            }
-            $stemmedWords[] = $word;
-        }
-        $str = implode(' ', $stemmedWords);
-
-        return preg_replace('/\s+/', ' ', trim($str));
-    }
-
-    private function extractNumbers(string $str): array
-    {
-        preg_match_all('/\d+/', $str, $matches);
-
-        return $matches[0] ?? [];
-    }
-
-    private function normalizeNumberPosition(string $str): string
-    {
-        $str = preg_replace('/(\d+)\s*\./', '$1', $str);
-        
-        return preg_replace('/\s+/', ' ', trim($str));
-    }
-
     public function matchParkingNames(string $parent_parking_name): ?int
     {
-        $parks = Park::all(['id', 'name']);
         $sourceName = trim($parent_parking_name);
-        $debugScores = [];
-
-        $parent_direct_normalized = $this->normalizeForDirectComparison($sourceName);
-        $parent_compact = str_replace(' ', '', $parent_direct_normalized);
-        $parentNumbers = $this->extractNumbers($sourceName);
-
-        if (! empty($parent_compact)) {
-            foreach ($parks as $park) {
-                $park_direct_normalized = $this->normalizeForDirectComparison($park->name);
-                $park_compact = str_replace(' ', '', $park_direct_normalized);
-
-                if ($park_compact === $parent_compact) {
-                    return $park->id;
-                }
-            }
+        
+        // reconciliation_park_name ile direkt eşleştirme
+        $park = Park::where('reconciliation_park_name', $sourceName)->first(['id']);
+        
+        if ($park) {
+            return $park->id;
         }
+        
+        // Eşleşme bulunamazsa log'la ve null döndür
+        Log::warning('Park Eşleştirme Başarısız: ' . $sourceName, [
+            'Aranan Mutabakat Park Adı' => $sourceName,
+        ]);
+        
+        return null;
+    }
 
-        $parent_normalized_words = $this->normalizeForWordAnalysis($sourceName);
-        if (empty(trim($parent_normalized_words))) {
-            return null;
-        }
-        $parentWords = array_filter(explode(' ', $parent_normalized_words));
-        $parentNumbers = $this->extractNumbers($sourceName);
+    private function matchHgsTransactionsWithSessions(): void
+    {
+        // Sadece eşleşmemiş HGS transaction'ları al
+        $unmatchedTransactions = HgsParkTransaction::where('is_matched', false)
+            ->orWhereNull('is_matched')
+            ->with('park')
+            ->get();
 
-        $bestMatchId = null;
-        $highestScore = 0;
+        $matchedCount = 0;
 
-        foreach ($parks as $park) {
-            $park_normalized_words = $this->normalizeForWordAnalysis($park->name);
-            $parkWords = array_filter(explode(' ', $park_normalized_words));
-            $parkNumbers = $this->extractNumbers($park->name);
-
-            if (empty($parkWords)) {
+        foreach ($unmatchedTransactions as $hgsTransaction) {
+            if (!$hgsTransaction->park_id || !$hgsTransaction->plate) {
                 continue;
             }
 
-            $commonWords = array_intersect($parentWords, $parkWords);
-            if (count($commonWords) === 0) {
-                continue;
+            // Plaka, park ve tarih bilgilerine göre session ara
+            $query = \App\Models\ParkSession::where('park_id', $hgsTransaction->park_id)
+                ->where('plate_txt', $hgsTransaction->plate);
+
+            // Giriş tarihi varsa ±5 dakika tolerans ile kontrol et
+            if ($hgsTransaction->entry_date) {
+                $entryStart = $hgsTransaction->entry_date->copy()->subMinutes(5);
+                $entryEnd = $hgsTransaction->entry_date->copy()->addMinutes(5);
+                $query->whereBetween('entry_at', [$entryStart, $entryEnd]);
             }
 
-            $allWords = array_unique(array_merge($parentWords, $parkWords));
-            $wordScore = (count($commonWords) / count($allWords)) * 100;
-
-            similar_text($parent_normalized_words, $park_normalized_words, $stringSimilarityPercent);
-
-            $score = ($wordScore * 0.7) + ($stringSimilarityPercent * 0.3);
-
-            $hasParentNumber = ! empty($parentNumbers);
-            $hasParkNumber = ! empty($parkNumbers);
-            $commonNumbers = array_intersect($parentNumbers, $parkNumbers);
-            $commonNumbersCount = count($commonNumbers);
-
-            if ($hasParentNumber && $hasParkNumber) {
-                if ($commonNumbersCount > 0 && $commonNumbersCount === count($parentNumbers)) {
-                    $score += 25;
-                } elseif ($commonNumbersCount > 0) {
-                    $score += 10;
-                } else {
-                    $score -= 50;
-                }
-            } elseif ($hasParentNumber xor $hasParkNumber) {
-                $score -= 15;
+            // Çıkış tarihi varsa ±5 dakika tolerans ile kontrol et
+            if ($hgsTransaction->exit_date) {
+                $exitStart = $hgsTransaction->exit_date->copy()->subMinutes(5);
+                $exitEnd = $hgsTransaction->exit_date->copy()->addMinutes(5);
+                $query->whereBetween('exit_at', [$exitStart, $exitEnd]);
             }
 
-            $debugScores[] = [
-                'Park ID' => $park->id,
-                'Park Adı (DB)' => $park->name,
-                'Skor' => round($score, 2),
-                'Parent Numbers' => implode(',', $parentNumbers),
-                'Park Numbers' => implode(',', $parkNumbers),
-            ];
+            $matchingSession = $query->first();
 
-            if ($score > $highestScore) {
-                $highestScore = $score;
-                $bestMatchId = $park->id;
+            if ($matchingSession) {
+                $hgsTransaction->update([
+                    'is_matched' => true,
+                    'matched_session_id' => $matchingSession->id,
+                ]);
+                $matchedCount++;
             }
         }
 
-        if (! $bestMatchId || $highestScore < 60) {
-            Log::warning('Park Eşleştirme Başarısız: '.$sourceName, [
-                'Aranan Ad' => $sourceName,
-                'En Yüksek Skor' => round($highestScore, 2),
-                'Seçilen ID' => $bestMatchId,
-                'Karşılaştırmalar' => $debugScores,
-            ]);
-
-            return null;
+        if ($matchedCount > 0) {
+            Log::info("HGS Transaction Eşleştirme: {$matchedCount} kayıt eşleştirildi.");
         }
-
-        return $bestMatchId;
     }
 }

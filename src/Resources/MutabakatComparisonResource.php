@@ -1,19 +1,19 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Resources;
+namespace Visiosoft\Mutabakat\Resources;
 
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use Visiosoft\Reconciliation\Models\Reconciliation;
-use Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource\Pages;
-use Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource\Widgets\ComparisonStatsWidget;
+use Visiosoft\Mutabakat\Models\Mutabakat;
+use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
+use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
 
-class ReconciliationComparisonResource extends Resource
+class MutabakatComparisonResource extends Resource
 {
-    protected static ?string $model = Reconciliation::class;
+    protected static ?string $model = Mutabakat::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-scale';
 
@@ -49,7 +49,7 @@ class ReconciliationComparisonResource extends Resource
 
                            Tables\Columns\TextColumn::make('zone_payment_total')
                     ->label('Zone Ödeme Tutarı')
-                    ->getStateUsing(fn (Reconciliation $record): float => $record->getZonePaymentTotal())
+                    ->getStateUsing(fn (Mutabakat $record): float => $record->getZonePaymentTotal())
                     ->money('TRY')
                     ->alignEnd(),
                 Tables\Columns\TextColumn::make('total_amount')
@@ -60,7 +60,7 @@ class ReconciliationComparisonResource extends Resource
 
                 Tables\Columns\TextColumn::make('difference')
                     ->label('Fark')
-                    ->getStateUsing(fn (Reconciliation $record): float => $record->getZonePaymentTotal() - ($record->total_amount ?? 0))
+                    ->getStateUsing(fn (Mutabakat $record): float => $record->getZonePaymentTotal() - ($record->total_amount ?? 0))
                     ->money('TRY')
                     ->alignEnd()
                     ->color(fn ($state): string => $state < 0 ? 'danger' : ($state > 0 ? 'warning' : 'success')),
@@ -72,14 +72,14 @@ class ReconciliationComparisonResource extends Resource
 
                 Tables\Filters\SelectFilter::make('parent_parking_name')
                     ->label('Ana Park')
-                    ->options(fn () => Reconciliation::getParentParkingNameOptions()),
+                    ->options(fn () => Mutabakat::getParentParkingNameOptions()),
             ])
             ->actions([
                 Tables\Actions\Action::make('session_comparison')
                     ->label('Oturum Detay')
                     ->icon('heroicon-o-document-chart-bar')
                     ->color('info')
-                    ->url(fn (Reconciliation $record): string => ReconciliationComparisonResource::getUrl('session-comparison', [
+                    ->url(fn (Mutabakat $record): string => MutabakatComparisonResource::getUrl('session-comparison', [
                         'record' => $record,
                     ])
                     ),
@@ -88,7 +88,7 @@ class ReconciliationComparisonResource extends Resource
                     ->label('Ödeme Detay')
                     ->icon('heroicon-o-credit-card')
                     ->color('warning')
-                    ->url(fn (Reconciliation $record): string => ReconciliationComparisonResource::getUrl('payment-comparison', [
+                    ->url(fn (Mutabakat $record): string => MutabakatComparisonResource::getUrl('payment-comparison', [
                         'record' => $record,
                     ])
                     ),
@@ -104,7 +104,7 @@ class ReconciliationComparisonResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListReconciliationComparisons::route('/'),
+            'index' => Pages\ListMutabakatComparisons::route('/'),
             'session-comparison' => Pages\SessionComparison::route('/{record}/sessions'),
             'payment-comparison' => Pages\PaymentComparison::route('/{record}/payments'),
         ];

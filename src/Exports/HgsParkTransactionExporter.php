@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Exports;
+namespace Visiosoft\Mutabakat\Exports;
 
 use App\Models\Payment;
 use Carbon\Carbon;
@@ -10,8 +10,8 @@ use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Facades\Excel;
-use Visiosoft\Reconciliation\Models\HgsParkTransaction;
-use Visiosoft\Reconciliation\Models\Reconciliation;
+use Visiosoft\Mutabakat\Models\HgsParkTransaction;
+use Visiosoft\Mutabakat\Models\Mutabakat;
 
 class HgsParkTransactionExporter implements WithMultipleSheets
 {
@@ -43,7 +43,7 @@ class HgsParkTransactionExporter implements WithMultipleSheets
         $dates = collect();
 
         foreach ($records as $record) {
-            if ($record instanceof Reconciliation) {
+            if ($record instanceof Mutabakat) {
                 $parkIds->push($record->park_id);
                 $dates->push($record->provision_date);
 
@@ -82,7 +82,7 @@ class HgsParkTransactionExporter implements WithMultipleSheets
 
     private static function getPosPayments(array $parkIds, $startDate, $endDate): Collection
     {
-        return Reconciliation::getPosPaymentsForExport($parkIds, $startDate, $endDate);
+        return Mutabakat::getPosPaymentsForExport($parkIds, $startDate, $endDate);
     }
 
     private static function mapHgsTransaction($record): array

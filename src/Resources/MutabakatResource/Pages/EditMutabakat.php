@@ -1,14 +1,14 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Resources\ReconciliationResource\Pages;
+namespace Visiosoft\Mutabakat\Resources\MutabakatResource\Pages;
 
-use Visiosoft\Reconciliation\Resources\ReconciliationResource;
+use Visiosoft\Mutabakat\Resources\MutabakatResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditReconciliation extends EditRecord
+class EditMutabakat extends EditRecord
 {
-    protected static string $resource = ReconciliationResource::class;
+    protected static string $resource = MutabakatResource::class;
 
     protected function getHeaderActions(): array
     {

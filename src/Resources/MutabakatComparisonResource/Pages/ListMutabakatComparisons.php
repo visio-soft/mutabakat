@@ -1,17 +1,17 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource\Pages;
+namespace Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
 
-use Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource;
-use Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource\Widgets\ComparisonStatsWidget;
-use Visiosoft\Reconciliation\Exports\HgsParkTransactionExporter;
+use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
+use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
+use Visiosoft\Mutabakat\Exports\HgsParkTransactionExporter;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Notifications\Notification;
 
-class ListReconciliationComparisons extends ListRecords
+class ListMutabakatComparisons extends ListRecords
 {
-    protected static string $resource = ReconciliationComparisonResource::class;
+    protected static string $resource = MutabakatComparisonResource::class;
 
     protected function getHeaderActions(): array
     {

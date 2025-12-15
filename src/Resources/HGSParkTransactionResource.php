@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Resources;
+namespace Visiosoft\Mutabakat\Resources;
 
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -10,8 +10,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use Visiosoft\Reconciliation\Models\HgsParkTransaction;
-use Visiosoft\Reconciliation\Resources\HGSParkTransactionResource\Pages;
+use Visiosoft\Mutabakat\Models\HgsParkTransaction;
+use Visiosoft\Mutabakat\Resources\HGSParkTransactionResource\Pages;
 
 class HGSParkTransactionResource extends Resource
 {

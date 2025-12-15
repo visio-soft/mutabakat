@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('reconciliations', function (Blueprint $table) {
+        Schema::create('mutabakat', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('park_id')->nullable();
             $table->string('row_hash')->nullable()->index();
@@ -30,6 +30,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('reconciliations');
+        Schema::dropIfExists('mutabakat');
     }
 };

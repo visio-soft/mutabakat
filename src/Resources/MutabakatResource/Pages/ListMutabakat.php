@@ -1,18 +1,18 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Resources\ReconciliationResource\Pages;
+namespace Visiosoft\Mutabakat\Resources\MutabakatResource\Pages;
 
-use Visiosoft\Reconciliation\Resources\ReconciliationResource;
-use Visiosoft\Reconciliation\Resources\ReconciliationResource\Widgets\ReconciliationStats;
-use Visiosoft\Reconciliation\Services\ReconciliationImportService;
+use Visiosoft\Mutabakat\Resources\MutabakatResource;
+use Visiosoft\Mutabakat\Resources\MutabakatResource\Widgets\MutabakatStats;
+use Visiosoft\Mutabakat\Services\MutabakatImportService;
 use Filament\Actions;
 use Filament\Forms\Components\FileUpload;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Notifications\Notification;
 
-class ListReconciliation extends ListRecords
+class ListMutabakat extends ListRecords
 {
-    protected static string $resource = ReconciliationResource::class;
+    protected static string $resource = MutabakatResource::class;
 
 
 
@@ -44,7 +44,7 @@ class ListReconciliation extends ListRecords
                     }
 
                     try {
-                        $importService = app(ReconciliationImportService::class);
+                        $importService = app(MutabakatImportService::class);
 
                         // Filament FileUpload'dan gelen dosya yolunu service'e gönder
                         // $file burada livewire-tmp klasöründeki dosya yolu olacak

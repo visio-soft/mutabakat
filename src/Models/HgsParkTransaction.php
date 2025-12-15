@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Reconciliation\Models;
+namespace Visiosoft\Mutabakat\Models;
 
 use App\Models\Park;
 use App\Models\ParkSession;
@@ -54,7 +54,7 @@ class HgsParkTransaction extends Model
         return $this->belongsTo(Park::class);
     }
 
-    public function matchedSession(): BelongsTo
+    public function parkSession(): BelongsTo
     {
         return $this->belongsTo(ParkSession::class, 'matched_session_id');
     }

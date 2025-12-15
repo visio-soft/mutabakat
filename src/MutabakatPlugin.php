@@ -1,26 +1,26 @@
 <?php
 
-namespace Visiosoft\Reconciliation;
+namespace Visiosoft\Mutabakat;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
-use Visiosoft\Reconciliation\Resources\HGSParkTransactionResource;
-use Visiosoft\Reconciliation\Resources\ReconciliationComparisonResource;
-use Visiosoft\Reconciliation\Resources\ReconciliationResource;
+use Visiosoft\Mutabakat\Resources\HGSParkTransactionResource;
+use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
+use Visiosoft\Mutabakat\Resources\MutabakatResource;
 
-class ReconciliationPlugin implements Plugin
+class MutabakatPlugin implements Plugin
 {
     public function getId(): string
     {
-        return 'reconciliation';
+        return 'mutabakat';
     }
 
     public function register(Panel $panel): void
     {
         $panel
             ->resources([
-                ReconciliationResource::class,
-                ReconciliationComparisonResource::class,
+                MutabakatResource::class,
+                MutabakatComparisonResource::class,
                 HGSParkTransactionResource::class,
             ]);
     }
