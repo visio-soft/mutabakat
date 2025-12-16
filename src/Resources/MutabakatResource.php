@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources;
+namespace Visio\mutabakat\Resources;
 
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -11,9 +11,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use Visiosoft\Mutabakat\Enums\FinanceAgreementEnum;
-use Visiosoft\Mutabakat\Models\Mutabakat;
-use Visiosoft\Mutabakat\Resources\MutabakatResource\Pages;
+use Visio\mutabakat\Enums\FinanceAgreementEnum;
+use Visio\mutabakat\Models\Mutabakat;
+use Visio\mutabakat\Resources\MutabakatResource\Pages;
 
 class MutabakatResource extends Resource
 {
@@ -59,6 +59,7 @@ class MutabakatResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('provision_date', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('provision_date')
                     ->label('Provizyon Tarihi')

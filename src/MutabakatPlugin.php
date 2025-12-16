@@ -1,12 +1,13 @@
 <?php
 
-namespace Visiosoft\Mutabakat;
+namespace Visio\mutabakat;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
-use Visiosoft\Mutabakat\Resources\HGSParkTransactionResource;
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
-use Visiosoft\Mutabakat\Resources\MutabakatResource;
+use Visio\mutabakat\Resources\HGSParkTransactionResource;
+use Visio\mutabakat\Resources\MutabakatComparisonResource;
+use Visio\mutabakat\Resources\MutabakatParkResource;
+use Visio\mutabakat\Resources\MutabakatResource;
 
 class MutabakatPlugin implements Plugin
 {
@@ -22,6 +23,7 @@ class MutabakatPlugin implements Plugin
                 MutabakatResource::class,
                 MutabakatComparisonResource::class,
                 HGSParkTransactionResource::class,
+                MutabakatParkResource::class,
             ]);
     }
 

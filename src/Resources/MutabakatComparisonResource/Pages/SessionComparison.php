@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
+namespace Visio\mutabakat\Resources\MutabakatComparisonResource\Pages;
 
 use App\Enums\PaymentMethodEnum;
 use App\Filament\Admin\Resources\ParkSessionResource;
@@ -15,10 +15,10 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Support\Collection;
-use Visiosoft\Mutabakat\Enums\PaymentTypeEnum;
-use Visiosoft\Mutabakat\Models\HgsParkTransaction;
-use Visiosoft\Mutabakat\Models\Mutabakat;
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
+use Visio\mutabakat\Enums\PaymentTypeEnum;
+use Visio\mutabakat\Models\HgsParkTransaction;
+use Visio\mutabakat\Models\Mutabakat;
+use Visio\mutabakat\Resources\MutabakatComparisonResource;
 
 class SessionComparison extends Page implements HasInfolists, HasTable
 {

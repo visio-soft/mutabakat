@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Commands;
+namespace Visio\mutabakat\Commands;
 
 use Illuminate\Console\Command;
 

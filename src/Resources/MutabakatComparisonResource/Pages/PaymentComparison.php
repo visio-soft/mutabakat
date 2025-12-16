@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
+namespace Visio\mutabakat\Resources\MutabakatComparisonResource\Pages;
 
 use App\Enums\PaymentMethodEnum;
 use App\Models\Payment;
@@ -14,12 +14,10 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 use App\Filament\Admin\Resources\PaymentResource;
-use Visiosoft\Mutabakat\Enums\PaymentTypeEnum;
-use Visiosoft\Mutabakat\Models\HgsParkTransaction;
-use Visiosoft\Mutabakat\Models\Mutabakat;
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
+use Visio\mutabakat\Enums\PaymentTypeEnum;
+use Visio\mutabakat\Models\Mutabakat;
+use Visio\mutabakat\Resources\MutabakatComparisonResource;
 
 class PaymentComparison extends Page implements HasTable, HasInfolists
 {
@@ -100,26 +98,14 @@ class PaymentComparison extends Page implements HasTable, HasInfolists
                     ->falseLabel('Eşleşmedi')
                     ->queries(
                         true: function (Builder $query) {
-                            // Sadece HGS ödemeleri ve is_matched = true olan
+                            // Sadece HGS ödemeleri ve park session'da mutabakat_is_matched = true olan
                             return $query->whereIn('service_id', [PaymentMethodEnum::HGS->value, PaymentMethodEnum::HGS_BACKEND->value])
-                                ->whereHas('parkSession', function ($sessionQuery) {
-                                    $sessionQuery->whereRaw('EXISTS (
-                                        SELECT 1 FROM hgs_transactions 
-                                        WHERE hgs_transactions.matched_session_id = park_sessions.id 
-                                        AND hgs_transactions.is_matched = true
-                                    )');
-                                });
+                                ->whereHas('parkSession', fn ($q) => $q->where('mutabakat_is_matched', true));
                         },
                         false: function (Builder $query) {
-                            // Sadece HGS ödemeleri ve eşleşmemiş olanlar
+                            // Sadece HGS ödemeleri ve park session'da mutabakat_is_matched = false olan
                             return $query->whereIn('service_id', [PaymentMethodEnum::HGS->value, PaymentMethodEnum::HGS_BACKEND->value])
-                                ->whereNotExists(function ($subQuery) {
-                                    $subQuery->select(DB::raw(1))
-                                        ->from('hgs_transactions')
-                                        ->join('park_sessions', 'hgs_transactions.matched_session_id', '=', 'park_sessions.id')
-                                        ->whereColumn('park_sessions.id', 'payments.park_session_id')
-                                        ->where('hgs_transactions.is_matched', true);
-                                });
+                                ->whereHas('parkSession', fn ($q) => $q->where('mutabakat_is_matched', false));
                         },
                         blank: fn (Builder $query) => $query->whereIn('service_id', [PaymentMethodEnum::HGS->value, PaymentMethodEnum::HGS_BACKEND->value]),
                     ),
@@ -132,18 +118,13 @@ class PaymentComparison extends Page implements HasTable, HasInfolists
         return Tables\Columns\TextColumn::make('match_status')
             ->label('Sonuç')
             ->getStateUsing(function (Payment $record) {
-                // Park session üzerinden HGS transaction kontrolü
+                // Park session üzerinden mutabakat_is_matched kontrolü
                 $session = $record->parkSession;
                 if (!$session) {
                     return 'Ödeme Detayına Git';
                 }
                 
-                // Bu session'a ait is_matched = true olan HGS transaction var mı?
-                $hasMatchedTransaction = HgsParkTransaction::where('matched_session_id', $session->id)
-                    ->where('is_matched', true)
-                    ->exists();
-                
-                return $hasMatchedTransaction ? 'Eşleşti' : 'Ödeme Detayına Git';
+                return $session->mutabakat_is_matched ? 'Eşleşti' : 'Ödeme Detayına Git';
             })
             ->color(fn (string $state) => $state === 'Eşleşti' ? 'success' : 'info')
             ->icon(fn (string $state) => $state === 'Eşleşti' ? 'heroicon-o-check-circle' : 'heroicon-o-arrow-top-right-on-square')

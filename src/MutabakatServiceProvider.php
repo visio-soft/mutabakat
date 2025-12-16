@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Mutabakat;
+namespace Visio\mutabakat;
 
 use Filament\Support\Assets\Asset;
 use Filament\Support\Assets\Css;
@@ -13,9 +13,9 @@ use Livewire\Features\SupportTesting\Testable;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Visiosoft\Mutabakat\Resources\MutabakatResource\Widgets\MutabakatStats;
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
-use Visiosoft\Mutabakat\Resources\HGSParkTransactionResource\Widgets\HgsParkTransactionStatsWidget;
+use Visio\mutabakat\Resources\MutabakatResource\Widgets\MutabakatStats;
+use Visio\mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
+use Visio\mutabakat\Resources\HGSParkTransactionResource\Widgets\HgsParkTransactionStatsWidget;
 
 class MutabakatServiceProvider extends PackageServiceProvider
 {
@@ -32,7 +32,7 @@ class MutabakatServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        //
+        
     }
 
     public function packageBooted(): void

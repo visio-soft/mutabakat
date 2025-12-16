@@ -20,7 +20,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Visiosoft\\Mutabakat\\": "src/"
+            "Visio\\mutabakat\\": "src/"
         }
     },
     "scripts": {
@@ -35,10 +35,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Visiosoft\\Mutabakat\\MutabakatServiceProvider"
+                "Visio\\mutabakat\\MutabakatServiceProvider"
             ],
             "aliases": {
-                "Mutabakat": "Visiosoft\\Mutabakat\\Facades\\Mutabakat"
+                "Mutabakat": "Visio\\mutabakat\\Facades\\Mutabakat"
             }
         }
     },

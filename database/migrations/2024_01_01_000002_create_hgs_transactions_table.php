@@ -8,10 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('hgs_transactions', function (Blueprint $table) {
+        Schema::create('hgs_park_transactions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('park_id')->nullable();
-            $table->unsignedBigInteger('matched_session_id')->nullable();
             $table->datetime('provision_date')->nullable();
             $table->date('payment_date')->nullable();
             $table->datetime('entry_date')->nullable();
@@ -38,6 +37,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('hgs_transactions');
+        Schema::dropIfExists('hgs_park_transactions');
     }
 };

@@ -1,11 +1,11 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\HGSParkTransactionResource\Pages;
+namespace Visio\mutabakat\Resources\HGSParkTransactionResource\Pages;
 
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use Visiosoft\Mutabakat\Resources\HGSParkTransactionResource;
-use Visiosoft\Mutabakat\Resources\HGSParkTransactionResource\Widgets\HgsParkTransactionStatsWidget;
+use Visio\mutabakat\Resources\HGSParkTransactionResource;
+use Visio\mutabakat\Resources\HGSParkTransactionResource\Widgets\HgsParkTransactionStatsWidget;
 
 class ListHgsParkTransactions extends ListRecords
 {

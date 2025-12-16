@@ -1,16 +1,16 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Facades;
+namespace Visio\mutabakat\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @see \Visiosoft\Mutabakat\Mutabakat
+ * @see \Visio\mutabakat\Mutabakat
  */
 class Mutabakat extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Visiosoft\Mutabakat\Mutabakat::class;
+        return \Visio\mutabakat\Mutabakat::class;
     }
 }

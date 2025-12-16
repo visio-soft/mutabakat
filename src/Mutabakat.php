@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Mutabakat;
+namespace Visio\mutabakat;
 
 class Mutabakat
 {

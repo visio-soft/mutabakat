@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Enums;
+namespace Visio\mutabakat\Enums;
 
 enum PaymentTypeEnum: string
 {

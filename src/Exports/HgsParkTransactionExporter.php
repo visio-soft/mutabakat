@@ -1,6 +1,6 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Exports;
+namespace Visio\mutabakat\Exports;
 
 use App\Models\Payment;
 use Carbon\Carbon;
@@ -10,8 +10,8 @@ use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Facades\Excel;
-use Visiosoft\Mutabakat\Models\HgsParkTransaction;
-use Visiosoft\Mutabakat\Models\Mutabakat;
+use Visio\mutabakat\Models\HgsParkTransaction;
+use Visio\mutabakat\Models\Mutabakat;
 
 class HgsParkTransactionExporter implements WithMultipleSheets
 {

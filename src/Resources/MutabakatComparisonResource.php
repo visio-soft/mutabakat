@@ -1,15 +1,15 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources;
+namespace Visio\mutabakat\Resources;
 
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use Visiosoft\Mutabakat\Models\Mutabakat;
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
+use Visio\mutabakat\Models\Mutabakat;
+use Visio\mutabakat\Resources\MutabakatComparisonResource\Pages;
+use Visio\mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
 
 class MutabakatComparisonResource extends Resource
 {

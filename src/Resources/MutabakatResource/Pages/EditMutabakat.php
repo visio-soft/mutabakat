@@ -1,8 +1,8 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\MutabakatResource\Pages;
+namespace Visio\mutabakat\Resources\MutabakatResource\Pages;
 
-use Visiosoft\Mutabakat\Resources\MutabakatResource;
+use Visio\mutabakat\Resources\MutabakatResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 

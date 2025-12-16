@@ -1,9 +1,8 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Models;
+namespace Visio\mutabakat\Models;
 
 use App\Models\Park;
-use App\Models\ParkSession;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,11 +14,10 @@ class HgsParkTransaction extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $table = 'hgs_transactions';
+    protected $table = 'hgs_park_transactions';
 
     protected $fillable = [
         'park_id',
-        'matched_session_id',
         'provision_date',
         'payment_date',
         'entry_date',
@@ -35,7 +33,6 @@ class HgsParkTransaction extends Model
         'commission_amount',
         'net_transfer_amount',
         'row_hash',
-        'is_matched',
     ];
 
     protected $casts = [
@@ -46,17 +43,11 @@ class HgsParkTransaction extends Model
         'amount' => 'decimal:2',
         'commission_amount' => 'decimal:2',
         'net_transfer_amount' => 'decimal:2',
-        'is_matched' => 'boolean',
     ];
 
     public function park(): BelongsTo
     {
         return $this->belongsTo(Park::class);
-    }
-
-    public function parkSession(): BelongsTo
-    {
-        return $this->belongsTo(ParkSession::class, 'matched_session_id');
     }
 
     public static function getByParkAndProvisionDate(int $parkId, $provisionDate): \Illuminate\Support\Collection

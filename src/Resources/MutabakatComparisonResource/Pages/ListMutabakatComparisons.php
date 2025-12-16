@@ -1,10 +1,10 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
+namespace Visio\mutabakat\Resources\MutabakatComparisonResource\Pages;
 
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
-use Visiosoft\Mutabakat\Exports\HgsParkTransactionExporter;
+use Visio\mutabakat\Resources\MutabakatComparisonResource;
+use Visio\mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
+use Visio\mutabakat\Exports\HgsParkTransactionExporter;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Notifications\Notification;
