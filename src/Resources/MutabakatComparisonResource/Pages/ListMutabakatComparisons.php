@@ -63,4 +63,16 @@ class ListMutabakatComparisons extends ListRecords
             ComparisonStatsWidget::class,
         ];
     }
+
+    protected function paginateTableQuery(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        // Remove any existing order by clauses that might conflict with GROUP BY
+        $query->getQuery()->orders = null;
+        
+        // Apply only the orders that are safe with GROUP BY
+        $query->orderByDesc('provision_date')
+              ->orderBy('parent_parking_name');
+        
+        return $query->paginate($this->getTableRecordsPerPage());
+    }
 }

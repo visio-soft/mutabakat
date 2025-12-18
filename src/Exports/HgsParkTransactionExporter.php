@@ -48,7 +48,7 @@ class HgsParkTransactionExporter implements WithMultipleSheets
                 $dates->push($record->provision_date);
 
                 $transactions = HgsParkTransaction::exportQuery($record->park_id, $record->provision_date)
-                    ->with(['park', 'matchedSession.payment'])
+                    ->with(['park'])
                     ->get();
 
                 foreach ($transactions as $transaction) {
@@ -215,7 +215,7 @@ class HgsParkTransactionDetailSheet implements FromView, WithTitle
 
     public function view(): View
     {
-        return view('reconciliation::exports.reconciliation-comparison', [
+        return view('mutabakat::exports.mutabakat-comparison', [
             'transactions' => $this->data,
             'sheetType' => 'detail',
             'summary' => $this->summary
@@ -241,7 +241,7 @@ class HgsParkTransactionDailySheet implements FromView, WithTitle
 
     public function view(): View
     {
-        return view('reconciliation::exports.reconciliation-comparison', [
+        return view('mutabakat::exports.mutabakat-comparison', [
             'dailySummary' => $this->dailySummary,
             'sheetType' => 'daily',
             'summary' => $this->summary
@@ -267,7 +267,7 @@ class HgsParkTransactionSummarySheet implements FromView, WithTitle
 
     public function view(): View
     {
-        return view('reconciliation::exports.reconciliation-comparison', [
+        return view('mutabakat::exports.mutabakat-comparison', [
             'transactions' => $this->data,
             'sheetType' => 'summary',
             'summary' => $this->summary

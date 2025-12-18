@@ -4,18 +4,19 @@ namespace Visio\mutabakat\Resources\MutabakatComparisonResource\Pages;
 
 use App\Enums\PaymentMethodEnum;
 use App\Models\Payment;
+use App\Filament\Admin\Resources\PaymentResource;
 use Filament\Infolists;
 use Filament\Infolists\Concerns\InteractsWithInfolists;
 use Filament\Infolists\Contracts\HasInfolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Admin\Resources\PaymentResource;
-use Visio\mutabakat\Enums\PaymentTypeEnum;
 use Visio\mutabakat\Models\Mutabakat;
 use Visio\mutabakat\Resources\MutabakatComparisonResource;
 
@@ -25,7 +26,7 @@ class PaymentComparison extends Page implements HasTable, HasInfolists
 
     protected static string $resource = MutabakatComparisonResource::class;
 
-    protected static string $view = 'mutabakat::pages.payment-comparison';
+    protected string $view = 'mutabakat::pages.payment-comparison';
 
     public Mutabakat $record;
 
@@ -132,18 +133,19 @@ class PaymentComparison extends Page implements HasTable, HasInfolists
                 if ($state === 'Eşleşti') {
                     return null;
                 }
+
                 $session = $record->parkSession;
-                if (!$session) {
+                if (! $session) {
                     return null;
                 }
-                
+
                 $provisionDate = $this->record->provision_date->format('d/m/Y');
-                $dateRange = $provisionDate . ' - ' . $provisionDate;
-                
-                return PaymentResource::getUrl('index') . '?' . http_build_query([
+                $dateRange = $provisionDate.' - '.$provisionDate;
+
+                return PaymentResource::getUrl('index').'?'.http_build_query([
                     'tableFilters' => [
                         'park_id' => [
-                            'values' => [$this->record->park_id],
+                            'value' => [$this->record->park_id],
                         ],
                         'created_at' => [
                             'created_at' => $dateRange,
@@ -155,14 +157,13 @@ class PaymentComparison extends Page implements HasTable, HasInfolists
             ->openUrlInNewTab();
     }
     
-    public function summaryInfolist(Infolist $infolist): Infolist
+    public function summaryInfolist(Schema $schema): Schema
     {
-        return $infolist
-            ->record($this->record)
+        return $schema
             ->schema([
-                Infolists\Components\Section::make('Ödeme Özet Bilgileri')
+                Section::make('Ödeme Özet Bilgileri')
                     ->schema([
-                        Infolists\Components\Grid::make(4)
+                        Grid::make(4)
                             ->schema([]),
                     ]),
             ]);

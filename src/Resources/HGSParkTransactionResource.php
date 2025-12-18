@@ -3,9 +3,10 @@
 namespace Visio\mutabakat\Resources;
 
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Actions;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -17,19 +18,19 @@ class HGSParkTransactionResource extends Resource
 {
     protected static ?string $model = HgsParkTransaction::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-credit-card';
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $navigationGroup = 'Mutabakat';
+    protected static string | \UnitEnum | null $navigationGroup = 'Mutabakat';
 
     protected static ?string $pluralModelLabel = 'HGS Geçişleri';
 
     protected static ?string $modelLabel = 'HGS Geçişi';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Forms\Components\TextInput::make('plate')
                     ->label('Plaka')
@@ -58,19 +59,26 @@ class HGSParkTransactionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->deferLoading()
+            ->striped()
             ->columns([
                 Tables\Columns\TextColumn::make('provision_date')
                     ->label('Provizyon Tarihi')
                     ->dateTime('d-m-Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('park.name')
                     ->label('Park Adı')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable()
+                    ->copyMessage('Park adı kopyalandı'),
                 Tables\Columns\TextColumn::make('plate')
                     ->label('Plaka')
                     ->searchable()
                     ->sortable()
+                    ->copyable()
+                    ->copyMessage('Plaka kopyalandı')
                     ->summarize(Tables\Columns\Summarizers\Count::make()->label('Kayıt')),
                 Tables\Columns\TextColumn::make('entry_date')
                     ->label('Giriş Tarihi')
@@ -130,11 +138,11 @@ class HGSParkTransactionResource extends Resource
                     ->useColumn('exit_date'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Actions\ViewAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                Actions\BulkActionGroup::make([
+                    Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('provision_date', 'desc');

@@ -4,9 +4,12 @@ namespace Visio\mutabakat\Resources;
 
 use App\Models\Park;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Actions;
+use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Table;
 use Visio\mutabakat\Resources\MutabakatParkResource\Pages;
 
@@ -14,11 +17,11 @@ class MutabakatParkResource extends Resource
 {
     protected static ?string $model = Park::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-building-office-2';
 
     protected static ?int $navigationSort = 10;
 
-    protected static ?string $navigationGroup = 'Mutabakat';
+    protected static string | \UnitEnum | null $navigationGroup = 'Mutabakat';
 
     protected static ?string $pluralModelLabel = 'Park Eşleştirmeleri';
 
@@ -26,11 +29,11 @@ class MutabakatParkResource extends Resource
 
     protected static ?string $slug = 'mutabakat-parks';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
-                Forms\Components\Section::make('Mutabakat Eşleştirme')
+                Section::make('Mutabakat Eşleştirme')
                     ->description('HGS mutabakat sistemindeki park adını buraya girin. Bu alan, Excel\'den gelen verilerin doğru park ile eşleştirilmesi için kullanılır.')
                     ->schema([
                         Forms\Components\TextInput::make('name')
@@ -49,25 +52,34 @@ class MutabakatParkResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->deferLoading()
+            ->striped()
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Park Adı')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable()
+                    ->copyMessage('Park adı kopyalandı'),
                 Tables\Columns\TextColumn::make('mutabakat_park_name')
                     ->label('Mutabakat Park Adı')
                     ->searchable()
                     ->sortable()
                     ->placeholder('Tanımlanmamış')
+                    ->badge()
                     ->color(fn ($state) => $state ? 'success' : 'danger')
-                    ->icon(fn ($state) => $state ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle'),
+                    ->icon(fn ($state) => $state ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->copyable()
+                    ->copyMessage('Mutabakat park adı kopyalandı'),
                 Tables\Columns\IconColumn::make('has_mutabakat_name')
                     ->label('Eşleşme')
                     ->boolean()
-                    ->getStateUsing(fn (Park $record) => !empty($record->mutabakat_park_name)),
+                    ->getStateUsing(fn (Park $record) => !empty($record->mutabakat_park_name))
+                    ->toggleable(),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('mutabakat_park_name')
@@ -81,11 +93,34 @@ class MutabakatParkResource extends Resource
                     ),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
+                Actions\EditAction::make()
                     ->label('Düzenle')
-                    ->modalHeading('Mutabakat Park Adı Düzenle'),
+                    ->icon('heroicon-o-pencil')
+                    ->modalHeading(fn (Park $record): string => "{$record->name} - Mutabakat Eşleştirme")
+                    ->modalDescription('HGS sistemindeki park adını aşağıdaki alana girin.')
+                    ->modalWidth('2xl')
+                    ->form([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Park Adı')
+                            ->disabled()
+                            ->dehydrated(false),
+                        Forms\Components\TextInput::make('mutabakat_park_name')
+                            ->label('Mutabakat Park Adı')
+                            ->placeholder('HGS sistemindeki park adını girin')
+                            ->maxLength(255)
+                            ->helperText('Excel dosyasındaki "Otopark Adı" veya "Bağlı Otopark Adı" sütunundaki değer')
+                            ->required(false),
+                    ])
+                    ->using(function (Park $record, array $data): Park {
+                        $record->update([
+                            'mutabakat_park_name' => $data['mutabakat_park_name'] ?? null,
+                        ]);
+                        return $record;
+                    })
+                    ->successNotificationTitle('Mutabakat park adı güncellendi')
+                    ->modalSubmitActionLabel('Kaydet')
+                    ->modalCancelActionLabel('İptal'),
             ])
-            ->bulkActions([])
             ->defaultSort('name', 'asc');
     }
 

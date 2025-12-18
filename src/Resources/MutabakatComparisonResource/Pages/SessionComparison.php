@@ -8,8 +8,9 @@ use App\Models\ParkSession;
 use Filament\Infolists;
 use Filament\Infolists\Concerns\InteractsWithInfolists;
 use Filament\Infolists\Contracts\HasInfolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -26,7 +27,7 @@ class SessionComparison extends Page implements HasInfolists, HasTable
 
     protected static string $resource = MutabakatComparisonResource::class;
 
-    protected static string $view = 'mutabakat::pages.session-comparison';
+    protected string $view = 'mutabakat::pages.session-comparison';
 
     public Mutabakat $record;
 
@@ -205,12 +206,11 @@ class SessionComparison extends Page implements HasInfolists, HasTable
         return false;
     }
 
-    public function summaryInfolist(Infolist $infolist): Infolist
+    public function summaryInfolist(Schema $schema): Schema
     {
-        return $infolist
-            ->record($this->record)
+        return $schema
             ->schema([
-                Infolists\Components\Section::make('Özet Bilgiler')
+                Section::make('Özet Bilgiler')
                     ->schema([]),
             ]);
     }

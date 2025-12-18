@@ -2,6 +2,7 @@
 
 namespace Visio\mutabakat\Models;
 
+use App\Enums\PaymentMethodEnum;
 use Visio\mutabakat\Enums\FinanceAgreementEnum;
 use App\Traits\Query\FinancialQueryTrait;
 use App\Models\Park;
@@ -56,7 +57,9 @@ class Mutabakat extends Model
             ->selectRaw('COUNT(*) as reconciliation_count')
             ->selectRaw('MIN(park_id) as park_id')
             ->selectRaw('MIN(id) as id')
-            ->groupBy('parent_parking_name', 'provision_date');
+            ->groupBy('parent_parking_name', 'provision_date')
+            ->orderByDesc('provision_date')
+            ->orderBy('parent_parking_name');
     }
 
     public function park(): BelongsTo
@@ -151,8 +154,8 @@ class Mutabakat extends Model
         }
 
         $hgsServiceIds = [
-            \App\Enums\PaymentMethodEnum::HGS->value,
-            \App\Enums\PaymentMethodEnum::HGS_BACKEND->value,
+            PaymentMethodEnum::HGS->value,
+            PaymentMethodEnum::HGS_BACKEND->value,
         ];
 
         return \App\Models\Payment::query()

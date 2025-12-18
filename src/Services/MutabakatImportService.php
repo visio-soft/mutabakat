@@ -100,6 +100,7 @@ class MutabakatImportService
                         $parkSessionResult = $this->processParkSessionRows($parkSessionRows, $parkSessionHeaders);
                         $results['park_sessions'] = array_merge($results['park_sessions'], $parkSessionResult);
                         
+                        // İmport sonrası eşleştirme yap
                         if ($results['park_sessions']['imported'] > 0) {
                             $this->matchHgsTransactionsWithSessions();
                         }
@@ -640,12 +641,14 @@ class MutabakatImportService
     {
         $sourceName = trim($parent_parking_name);
         
+        // mutabakat_park_name ile direkt eşleştirme
         $park = Park::where('mutabakat_park_name', $sourceName)->first(['id']);
         
         if ($park) {
             return $park->id;
         }
         
+        // Eşleşme bulunamazsa log'la ve null döndür
         Log::warning('Park Eşleştirme Başarısız: ' . $sourceName, [
             'Aranan Mutabakat Park Adı' => $sourceName,
         ]);
@@ -655,6 +658,7 @@ class MutabakatImportService
 
     private function matchHgsTransactionsWithSessions(): void
     {
+        // Son 1 saat içinde eklenen transaction'ları al (yeni import edilenler)
         $unmatchedTransactions = HgsParkTransaction::query()
             ->where('created_at', '>=', now()->subHour())
             ->select(['id', 'park_id', 'plate', 'entry_date', 'exit_date', 'provision_date'])
@@ -665,11 +669,13 @@ class MutabakatImportService
             return;
         }
 
+        // Provizyon tarih aralığını hesapla
         $minProvisionDate = $unmatchedTransactions->min('provision_date');
         $maxProvisionDate = $unmatchedTransactions->max('provision_date');
         $startDate = $minProvisionDate ? Carbon::parse($minProvisionDate)->subDays(20) : now()->subDays(50);
         $endDate = $maxProvisionDate ? Carbon::parse($maxProvisionDate) : now();
 
+        // Park ID'lerini topla
         $parkIds = $unmatchedTransactions->pluck('park_id')->unique()->filter()->values()->toArray();
 
         if (empty($parkIds)) {
@@ -677,6 +683,7 @@ class MutabakatImportService
             return;
         }
 
+        // Sadece gerekli session'ları çek (ilgili parklar ve tarih aralığı)
         $waitingSessions = \App\Models\ParkSession::query()
             ->whereIn('park_id', $parkIds)
             ->where(fn($q) => $q->where('mutabakat_is_matched', false)->orWhereNull('mutabakat_is_matched'))
@@ -709,40 +716,57 @@ class MutabakatImportService
         $this->updateMatchedSessions($matchedSessionIds);
     }
 
+    /**
+     * Session için benzersiz anahtar oluşturur (gün + saat + dakika seviyesinde)
+     */
     private function generateSessionKey($session): string
     {
         $cleanPlate = $this->cleanPlate($session->plate_txt);
+        // Gün + Saat + Dakika formatı (saniye hariç)
         $entryDateTime = $session->entry_at ? $session->entry_at->format('Y-m-d H:i') : '';
         $exitDateTime = $session->exit_at ? $session->exit_at->format('Y-m-d H:i') : '';
         
         return "{$session->park_id}_{$cleanPlate}_{$entryDateTime}_{$exitDateTime}";
     }
 
+    /**
+     * HGS transaction için eşleşen session'ı bulur (±2 dakika tolerans ile)
+     */
     private function findMatchingSession($transaction, $waitingSessions)
     {
         $cleanPlate = $this->cleanPlate($transaction->plate);
         $entryTime = $transaction->entry_date ? Carbon::parse($transaction->entry_date) : null;
         $exitTime = $transaction->exit_date ? Carbon::parse($transaction->exit_date) : null;
         
-        $entryDateTime = $entryTime ? $entryTime->format('Y-m-d H:i') : '';
-        $exitDateTime = $exitTime ? $exitTime->format('Y-m-d H:i') : '';
+        if (!$entryTime || !$exitTime) {
+            return null;
+        }
+        
+        // Önce tam eşleşme dene
+        $entryDateTime = $entryTime->format('Y-m-d H:i');
+        $exitDateTime = $exitTime->format('Y-m-d H:i');
         $key = "{$transaction->park_id}_{$cleanPlate}_{$entryDateTime}_{$exitDateTime}";
         
         if ($waitingSessions->has($key)) {
             return $waitingSessions->get($key);
         }
         
-        $entryVariants = $entryTime ? [
+        // ±2 dakika tolerans ile dene (entry ve exit için tüm kombinasyonlar)
+        $entryVariants = [
+            $entryTime->copy()->subMinutes(2)->format('Y-m-d H:i'),
             $entryTime->copy()->subMinute()->format('Y-m-d H:i'),
             $entryTime->format('Y-m-d H:i'),
             $entryTime->copy()->addMinute()->format('Y-m-d H:i'),
-        ] : [''];
+            $entryTime->copy()->addMinutes(2)->format('Y-m-d H:i'),
+        ];
         
-        $exitVariants = $exitTime ? [
+        $exitVariants = [
+            $exitTime->copy()->subMinutes(2)->format('Y-m-d H:i'),
             $exitTime->copy()->subMinute()->format('Y-m-d H:i'),
             $exitTime->format('Y-m-d H:i'),
             $exitTime->copy()->addMinute()->format('Y-m-d H:i'),
-        ] : [''];
+            $exitTime->copy()->addMinutes(2)->format('Y-m-d H:i'),
+        ];
         
         foreach ($entryVariants as $entry) {
             foreach ($exitVariants as $exit) {
@@ -756,6 +780,9 @@ class MutabakatImportService
         return null;
     }
 
+    /**
+     * Eşleşen session'ları toplu günceller
+     */
     private function updateMatchedSessions(array $sessionIds): void
     {
         if (empty($sessionIds)) {
@@ -768,12 +795,18 @@ class MutabakatImportService
         Log::info("HGS Transaction Eşleştirme: " . count($sessionIds) . " session eşleştirildi.");
     }
 
+    /**
+     * Plakayı temizler (boşluk, tire, nokta ve özel karakterleri kaldırır, Türkçe karakterleri normalize eder)
+     */
     private function cleanPlate(?string $plate): string
     {
         if (empty($plate)) {
             return '';
         }
 
-        return strtoupper(str_replace([' ', '-', '.'], '', $plate));
+        // Tüm boşluk, tire, nokta ve özel karakterleri kaldır
+        $plate = preg_replace('/[^A-Z0-9]/i', '', $plate);
+
+        return strtoupper(trim($plate));
     }
 }
