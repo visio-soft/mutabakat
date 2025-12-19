@@ -1,6 +1,6 @@
-# Mutabakat - FilamentPHP 3 Plugin
+# Mutabakat - FilamentPHP 4 Plugin
 
-A FilamentPHP 3 plugin for managing mutabakat (reconciliation) records in Laravel applications.
+A FilamentPHP 4 plugin for managing mutabakat (reconciliation) records in Laravel applications.
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/visiosoft/mutabakat.svg?style=flat-square)](https://packagist.org/packages/visiosoft/mutabakat)
 [![Total Downloads](https://img.shields.io/packagist/dt/visiosoft/mutabakat.svg?style=flat-square)](https://packagist.org/packages/visiosoft/mutabakat)
@@ -8,7 +8,7 @@ A FilamentPHP 3 plugin for managing mutabakat (reconciliation) records in Larave
 ## Features
 
 - Complete CRUD operations for mutabakat records
-- Integration with FilamentPHP 3
+- Integration with FilamentPHP 4
 - Support for Laravel 11 and 12
 - Soft deletes support
 - Comprehensive table structure for reconciliation tracking
@@ -17,9 +17,9 @@ A FilamentPHP 3 plugin for managing mutabakat (reconciliation) records in Larave
 
 ## Requirements
 
-- PHP 8.2 or higher
+- PHP 8.3 or higher
 - Laravel 11.x or 12.x
-- FilamentPHP 3.x
+- FilamentPHP 4.x
 
 ## Installation
 

@@ -1,6 +1,6 @@
 {
     "name": "visio/mutabakat",
-    "description": "A FilamentPHP 3 plugin for managing mutabakat records",
+    "description": "A FilamentPHP 4 plugin for managing mutabakat records",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -10,8 +10,8 @@
         }
     ],
     "require": {
-        "php": "^8.2",
-        "filament/filament": "^3.0",
+        "php": "^8.3",
+        "filament/filament": "^4.0",
         "illuminate/contracts": "^11.0|^12.0",
         "spatie/laravel-package-tools": "^1.16"
     },
@@ -20,7 +20,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Visiosoft\\Mutabakat\\": "src/"
+            "Visio\\mutabakat\\": "src/"
         }
     },
     "scripts": {
@@ -35,10 +35,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Visiosoft\\Mutabakat\\MutabakatServiceProvider"
+                "Visio\\mutabakat\\MutabakatServiceProvider"
             ],
             "aliases": {
-                "Mutabakat": "Visiosoft\\Mutabakat\\Facades\\Mutabakat"
+                "Mutabakat": "Visio\\mutabakat\\Facades\\Mutabakat"
             }
         }
     },

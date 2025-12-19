@@ -1,9 +1,9 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\MutabakatResource\Pages;
+namespace Visio\mutabakat\Resources\MutabakatResource\Pages;
 
 use Filament\Resources\Pages\CreateRecord;
-use Visiosoft\Mutabakat\Resources\MutabakatResource;
+use Visio\mutabakat\Resources\MutabakatResource;
 
 class CreateMutabakat extends CreateRecord
 {

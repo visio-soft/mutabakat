@@ -1,15 +1,15 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Widgets;
+namespace Visio\mutabakat\Resources\MutabakatComparisonResource\Widgets;
 
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Number;
-use Visiosoft\Mutabakat\Models\Mutabakat;
+use Visio\mutabakat\Models\Mutabakat;
 
 class ComparisonStatsWidget extends BaseWidget
 {
-    protected static ?string $pollingInterval = null;
+    protected ?string $pollingInterval = null;
 
     public array $tableFilters = [];
 

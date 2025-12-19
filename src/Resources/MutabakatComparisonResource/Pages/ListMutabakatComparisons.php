@@ -1,10 +1,10 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
+namespace Visio\mutabakat\Resources\MutabakatComparisonResource\Pages;
 
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
-use Visiosoft\Mutabakat\Exports\HgsParkTransactionExporter;
+use Visio\mutabakat\Resources\MutabakatComparisonResource;
+use Visio\mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
+use Visio\mutabakat\Exports\HgsParkTransactionExporter;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Notifications\Notification;
@@ -62,5 +62,17 @@ class ListMutabakatComparisons extends ListRecords
         return [
             ComparisonStatsWidget::class,
         ];
+    }
+
+    protected function paginateTableQuery(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        // Remove any existing order by clauses that might conflict with GROUP BY
+        $query->getQuery()->orders = null;
+        
+        // Apply only the orders that are safe with GROUP BY
+        $query->orderByDesc('provision_date')
+              ->orderBy('parent_parking_name');
+        
+        return $query->paginate($this->getTableRecordsPerPage());
     }
 }

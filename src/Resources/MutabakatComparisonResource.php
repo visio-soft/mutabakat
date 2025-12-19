@@ -1,23 +1,24 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources;
+namespace Visio\mutabakat\Resources;
 
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Actions;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use Visiosoft\Mutabakat\Models\Mutabakat;
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
+use Visio\mutabakat\Models\Mutabakat;
+use Visio\mutabakat\Resources\MutabakatComparisonResource\Pages;
+use Visio\mutabakat\Resources\MutabakatComparisonResource\Widgets\ComparisonStatsWidget;
 
 class MutabakatComparisonResource extends Resource
 {
     protected static ?string $model = Mutabakat::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-scale';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-scale';
 
-    protected static ?string $navigationGroup = 'Mutabakat';
+    protected static string | \UnitEnum | null $navigationGroup = 'Mutabakat';
 
     protected static ?string $navigationLabel = 'Günlük Mutabakat Rapor';
 
@@ -30,33 +31,36 @@ class MutabakatComparisonResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->deferLoading()
+            ->striped()
             ->columns([
                 Tables\Columns\TextColumn::make('provision_date')
                     ->label('Rapor Tarihi')
                     ->date()
-                    ->sortable(),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('parent_parking_name')
                     ->label('Ana Park Adı')
                     ->searchable()
+                    ->copyable()
+                    ->copyMessage('Park adı kopyalandı')
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('transaction_count')
                     ->label('İşlem Sayısı')
                     ->numeric()
-                    ->alignCenter()
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Toplam')),
+                    ->alignCenter(),
 
-                           Tables\Columns\TextColumn::make('zone_payment_total')
+                Tables\Columns\TextColumn::make('zone_payment_total')
                     ->label('Zone Ödeme Tutarı')
                     ->getStateUsing(fn (Mutabakat $record): float => $record->getZonePaymentTotal())
                     ->money('TRY')
                     ->alignEnd(),
+
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('HGS Tutarı')
                     ->money('TRY')
-                    ->alignEnd()
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->money('TRY')->label('Toplam')),
+                    ->alignEnd(),
 
                 Tables\Columns\TextColumn::make('difference')
                     ->label('Fark')
@@ -75,7 +79,7 @@ class MutabakatComparisonResource extends Resource
                     ->options(fn () => Mutabakat::getParentParkingNameOptions()),
             ])
             ->actions([
-                Tables\Actions\Action::make('session_comparison')
+                Actions\Action::make('session_comparison')
                     ->label('Oturum Detay')
                     ->icon('heroicon-o-document-chart-bar')
                     ->color('info')
@@ -84,7 +88,7 @@ class MutabakatComparisonResource extends Resource
                     ])
                     ),
 
-                Tables\Actions\Action::make('payment_comparison')
+                Actions\Action::make('payment_comparison')
                     ->label('Ödeme Detay')
                     ->icon('heroicon-o-credit-card')
                     ->color('warning')
@@ -92,8 +96,7 @@ class MutabakatComparisonResource extends Resource
                         'record' => $record,
                     ])
                     ),
-            ])
-            ->defaultSort('provision_date', 'desc');
+            ]);
     }
 
     public static function getEloquentQuery(): Builder

@@ -1,14 +1,15 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Services;
+namespace Visio\mutabakat\Services;
 
 use App\Models\Park;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Visiosoft\Mutabakat\Models\HgsParkTransaction;
-use Visiosoft\Mutabakat\Models\Mutabakat;
+use Visio\mutabakat\Models\HgsParkTransaction;
+use Visio\mutabakat\Models\Mutabakat;
+
 
 class MutabakatImportService
 {
@@ -124,14 +125,30 @@ class MutabakatImportService
     private function resolveFilePath($filePath): ?string
     {
         if (is_string($filePath)) {
+            // livewire-tmp klasöründeki dosya
             $tmpPath = storage_path('app/livewire-tmp/'.$filePath);
             if (file_exists($tmpPath)) {
                 return $tmpPath;
-            } elseif (Storage::disk('public')->exists($filePath)) {
+            }
+            
+            // mutabakat-imports klasöründeki dosya (job'dan gelen)
+            $mutabakatPath = storage_path('app/public/'.$filePath);
+            if (file_exists($mutabakatPath)) {
+                return $mutabakatPath;
+            }
+            
+            // public disk'teki dosya
+            if (Storage::disk('public')->exists($filePath)) {
                 return Storage::disk('public')->path($filePath);
-            } elseif (Storage::disk('local')->exists($filePath)) {
+            }
+            
+            // local disk'teki dosya
+            if (Storage::disk('local')->exists($filePath)) {
                 return Storage::disk('local')->path($filePath);
-            } elseif (file_exists($filePath)) {
+            }
+            
+            // Direkt dosya yolu
+            if (file_exists($filePath)) {
                 return $filePath;
             }
         } elseif (is_object($filePath) && method_exists($filePath, 'getRealPath')) {
@@ -624,8 +641,8 @@ class MutabakatImportService
     {
         $sourceName = trim($parent_parking_name);
         
-        // reconciliation_park_name ile direkt eşleştirme
-        $park = Park::where('reconciliation_park_name', $sourceName)->first(['id']);
+        // mutabakat_park_name ile direkt eşleştirme
+        $park = Park::where('mutabakat_park_name', $sourceName)->first(['id']);
         
         if ($park) {
             return $park->id;
@@ -641,50 +658,155 @@ class MutabakatImportService
 
     private function matchHgsTransactionsWithSessions(): void
     {
-        // Sadece eşleşmemiş HGS transaction'ları al
-        $unmatchedTransactions = HgsParkTransaction::where('is_matched', false)
-            ->orWhereNull('is_matched')
-            ->with('park')
+        // Son 1 saat içinde eklenen transaction'ları al (yeni import edilenler)
+        $unmatchedTransactions = HgsParkTransaction::query()
+            ->where('created_at', '>=', now()->subHour())
+            ->select(['id', 'park_id', 'plate', 'entry_date', 'exit_date', 'provision_date'])
             ->get();
 
-        $matchedCount = 0;
+        if ($unmatchedTransactions->isEmpty()) {
+            Log::info("HGS Transaction Eşleştirme: Eşleştirilecek transaction bulunamadı.");
+            return;
+        }
 
-        foreach ($unmatchedTransactions as $hgsTransaction) {
-            if (!$hgsTransaction->park_id || !$hgsTransaction->plate) {
+        // Provizyon tarih aralığını hesapla
+        $minProvisionDate = $unmatchedTransactions->min('provision_date');
+        $maxProvisionDate = $unmatchedTransactions->max('provision_date');
+        $startDate = $minProvisionDate ? Carbon::parse($minProvisionDate)->subDays(20) : now()->subDays(50);
+        $endDate = $maxProvisionDate ? Carbon::parse($maxProvisionDate) : now();
+
+        // Park ID'lerini topla
+        $parkIds = $unmatchedTransactions->pluck('park_id')->unique()->filter()->values()->toArray();
+
+        if (empty($parkIds)) {
+            Log::info("HGS Transaction Eşleştirme: Park ID bulunamadı.");
+            return;
+        }
+
+        // Sadece gerekli session'ları çek (ilgili parklar ve tarih aralığı)
+        $waitingSessions = \App\Models\ParkSession::query()
+            ->whereIn('park_id', $parkIds)
+            ->where(fn($q) => $q->where('mutabakat_is_matched', false)->orWhereNull('mutabakat_is_matched'))
+            ->whereNotNull('exit_at')
+            ->whereDate('exit_at', '>=', $startDate)
+            ->whereDate('exit_at', '<=', $endDate)
+            ->select(['id', 'park_id', 'plate_txt', 'entry_at', 'exit_at'])
+            ->get()
+            ->keyBy(fn($session) => $this->generateSessionKey($session));
+
+        if ($waitingSessions->isEmpty()) {
+            Log::info("HGS Transaction Eşleştirme: Bekleyen session bulunamadı.");
+            return;
+        }
+
+        $matchedSessionIds = [];
+
+        foreach ($unmatchedTransactions as $transaction) {
+            if (!$transaction->park_id || !$transaction->plate) {
                 continue;
             }
 
-            // Plaka, park ve tarih bilgilerine göre session ara
-            $query = \App\Models\ParkSession::where('park_id', $hgsTransaction->park_id)
-                ->where('plate_txt', $hgsTransaction->plate);
-
-            // Giriş tarihi varsa ±5 dakika tolerans ile kontrol et
-            if ($hgsTransaction->entry_date) {
-                $entryStart = $hgsTransaction->entry_date->copy()->subMinutes(5);
-                $entryEnd = $hgsTransaction->entry_date->copy()->addMinutes(5);
-                $query->whereBetween('entry_at', [$entryStart, $entryEnd]);
-            }
-
-            // Çıkış tarihi varsa ±5 dakika tolerans ile kontrol et
-            if ($hgsTransaction->exit_date) {
-                $exitStart = $hgsTransaction->exit_date->copy()->subMinutes(5);
-                $exitEnd = $hgsTransaction->exit_date->copy()->addMinutes(5);
-                $query->whereBetween('exit_at', [$exitStart, $exitEnd]);
-            }
-
-            $matchingSession = $query->first();
+            $matchingSession = $this->findMatchingSession($transaction, $waitingSessions);
 
             if ($matchingSession) {
-                $hgsTransaction->update([
-                    'is_matched' => true,
-                    'matched_session_id' => $matchingSession->id,
-                ]);
-                $matchedCount++;
+                $matchedSessionIds[] = $matchingSession->id;
             }
         }
 
-        if ($matchedCount > 0) {
-            Log::info("HGS Transaction Eşleştirme: {$matchedCount} kayıt eşleştirildi.");
+        $this->updateMatchedSessions($matchedSessionIds);
+    }
+
+    /**
+     * Session için benzersiz anahtar oluşturur (gün + saat + dakika seviyesinde)
+     */
+    private function generateSessionKey($session): string
+    {
+        $cleanPlate = $this->cleanPlate($session->plate_txt);
+        // Gün + Saat + Dakika formatı (saniye hariç)
+        $entryDateTime = $session->entry_at ? $session->entry_at->format('Y-m-d H:i') : '';
+        $exitDateTime = $session->exit_at ? $session->exit_at->format('Y-m-d H:i') : '';
+        
+        return "{$session->park_id}_{$cleanPlate}_{$entryDateTime}_{$exitDateTime}";
+    }
+
+    /**
+     * HGS transaction için eşleşen session'ı bulur (±2 dakika tolerans ile)
+     */
+    private function findMatchingSession($transaction, $waitingSessions)
+    {
+        $cleanPlate = $this->cleanPlate($transaction->plate);
+        $entryTime = $transaction->entry_date ? Carbon::parse($transaction->entry_date) : null;
+        $exitTime = $transaction->exit_date ? Carbon::parse($transaction->exit_date) : null;
+        
+        if (!$entryTime || !$exitTime) {
+            return null;
         }
+        
+        // Önce tam eşleşme dene
+        $entryDateTime = $entryTime->format('Y-m-d H:i');
+        $exitDateTime = $exitTime->format('Y-m-d H:i');
+        $key = "{$transaction->park_id}_{$cleanPlate}_{$entryDateTime}_{$exitDateTime}";
+        
+        if ($waitingSessions->has($key)) {
+            return $waitingSessions->get($key);
+        }
+        
+        // ±2 dakika tolerans ile dene (entry ve exit için tüm kombinasyonlar)
+        $entryVariants = [
+            $entryTime->copy()->subMinutes(2)->format('Y-m-d H:i'),
+            $entryTime->copy()->subMinute()->format('Y-m-d H:i'),
+            $entryTime->format('Y-m-d H:i'),
+            $entryTime->copy()->addMinute()->format('Y-m-d H:i'),
+            $entryTime->copy()->addMinutes(2)->format('Y-m-d H:i'),
+        ];
+        
+        $exitVariants = [
+            $exitTime->copy()->subMinutes(2)->format('Y-m-d H:i'),
+            $exitTime->copy()->subMinute()->format('Y-m-d H:i'),
+            $exitTime->format('Y-m-d H:i'),
+            $exitTime->copy()->addMinute()->format('Y-m-d H:i'),
+            $exitTime->copy()->addMinutes(2)->format('Y-m-d H:i'),
+        ];
+        
+        foreach ($entryVariants as $entry) {
+            foreach ($exitVariants as $exit) {
+                $tolerantKey = "{$transaction->park_id}_{$cleanPlate}_{$entry}_{$exit}";
+                if ($waitingSessions->has($tolerantKey)) {
+                    return $waitingSessions->get($tolerantKey);
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Eşleşen session'ları toplu günceller
+     */
+    private function updateMatchedSessions(array $sessionIds): void
+    {
+        if (empty($sessionIds)) {
+            Log::info("HGS Transaction Eşleştirme: Eşleşen session bulunamadı.");
+            return;
+        }
+
+        \App\Models\ParkSession::whereIn('id', $sessionIds)->update(['mutabakat_is_matched' => true]);
+        
+        Log::info("HGS Transaction Eşleştirme: " . count($sessionIds) . " session eşleştirildi.");
+    }
+
+    /**
+     * Plakayı temizler (boşluk, tire, nokta ve özel karakterleri kaldırır, Türkçe karakterleri normalize eder)
+     */
+    private function cleanPlate(?string $plate): string
+    {
+        if (empty($plate)) {
+            return '';
+        }
+
+        // Tüm boşluk, tire, nokta ve özel karakterleri kaldır
+        $plate = preg_replace('/[^A-Z0-9]/i', '', $plate);
+
+        return strtoupper(trim($plate));
     }
 }

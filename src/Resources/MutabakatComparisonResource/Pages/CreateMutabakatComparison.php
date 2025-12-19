@@ -1,8 +1,8 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\MutabakatComparisonResource\Pages;
+namespace Visio\mutabakat\Resources\MutabakatComparisonResource\Pages;
 
-use Visiosoft\Mutabakat\Resources\MutabakatComparisonResource;
+use Visio\mutabakat\Resources\MutabakatComparisonResource;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateMutabakatComparison extends CreateRecord

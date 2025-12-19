@@ -1,8 +1,9 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Models;
+namespace Visio\mutabakat\Models;
 
-use Visiosoft\Mutabakat\Enums\FinanceAgreementEnum;
+use App\Enums\PaymentMethodEnum;
+use Visio\mutabakat\Enums\FinanceAgreementEnum;
 use App\Traits\Query\FinancialQueryTrait;
 use App\Models\Park;
 use Illuminate\Database\Eloquent\Collection;
@@ -10,11 +11,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
-use Visiosoft\Mutabakat\Models\HGSTransaction;
+use Visio\mutabakat\Models\HGSTransaction;
 
 class Mutabakat extends Model
 {
     use SoftDeletes,FinancialQueryTrait;
+
+    protected $table = 'mutabakat';
 
     protected $attributes = [
         'status' => 'waiting',
@@ -54,7 +57,9 @@ class Mutabakat extends Model
             ->selectRaw('COUNT(*) as reconciliation_count')
             ->selectRaw('MIN(park_id) as park_id')
             ->selectRaw('MIN(id) as id')
-            ->groupBy('parent_parking_name', 'provision_date');
+            ->groupBy('parent_parking_name', 'provision_date')
+            ->orderByDesc('provision_date')
+            ->orderBy('parent_parking_name');
     }
 
     public function park(): BelongsTo
@@ -110,7 +115,7 @@ class Mutabakat extends Model
 
     public function getHgsTotalAmount(): float
     {
-        return HGSTransaction::query()
+        return HgsParkTransaction::query()
             ->where('park_id', $this->park_id)
             ->whereDate('exit_date', $this->provision_date)
             ->whereDate('entry_date', $this->provision_date)
@@ -120,7 +125,7 @@ class Mutabakat extends Model
 
     public function getHgsTransactionCount(): int
     {
-        return HGSTransaction::query()
+        return HgsParkTransaction::query()
             ->where('park_id', $this->park_id)
             ->whereDate('exit_date', $this->provision_date)
             ->whereDate('entry_date', $this->provision_date)
@@ -149,8 +154,8 @@ class Mutabakat extends Model
         }
 
         $hgsServiceIds = [
-            \App\Enums\PaymentMethodEnum::HGS->value,
-            \App\Enums\PaymentMethodEnum::HGS_BACKEND->value,
+            PaymentMethodEnum::HGS->value,
+            PaymentMethodEnum::HGS_BACKEND->value,
         ];
 
         return \App\Models\Payment::query()

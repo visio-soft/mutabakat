@@ -1,37 +1,38 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources;
+namespace Visio\mutabakat\Resources;
 
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
+use Filament\Actions;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use Visiosoft\Mutabakat\Enums\FinanceAgreementEnum;
-use Visiosoft\Mutabakat\Models\Mutabakat;
-use Visiosoft\Mutabakat\Resources\MutabakatResource\Pages;
+use Visio\mutabakat\Enums\FinanceAgreementEnum;
+use Visio\mutabakat\Models\Mutabakat;
+use Visio\mutabakat\Resources\MutabakatResource\Pages;
 
 class MutabakatResource extends Resource
 {
     protected static ?string $model = Mutabakat::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?int $navigationSort = -2;
 
-    protected static ?string $navigationGroup = 'Mutabakat';
+    protected static string | \UnitEnum | null $navigationGroup = 'Mutabakat';
 
     protected static ?string $pluralModelLabel = "Hgs'den Gelen Raporları";
 
     protected static ?string $modelLabel = 'Mutabakat';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Forms\Components\TextInput::make('row_hash')
                     ->required()
@@ -59,14 +60,21 @@ class MutabakatResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->deferLoading()
+            ->striped()
+            ->defaultSort('provision_date', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('provision_date')
                     ->label('Provizyon Tarihi')
                     ->dateTime('d-m-Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('park.name')
                     ->label('Park Adı')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable()
+                    ->copyable()
+                    ->copyMessage('Park adı kopyalandı'),
                 Tables\Columns\TextColumn::make('transaction_name')
                     ->label('İşlem Adı')
                     ->searchable(),
@@ -138,7 +146,7 @@ class MutabakatResource extends Resource
                     ->useColumn('provision_date'),
             ])
             ->actions([
-                Tables\Actions\Action::make('detail')
+                Actions\Action::make('detail')
                     ->label('Detay')
                     ->icon('heroicon-o-eye')
                     ->color('info')
@@ -154,11 +162,11 @@ class MutabakatResource extends Resource
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                    Tables\Actions\BulkAction::make('changeStatus')
+                Actions\BulkActionGroup::make([
+                    Actions\DeleteBulkAction::make(),
+                    Actions\ForceDeleteBulkAction::make(),
+                    Actions\RestoreBulkAction::make(),
+                    Actions\BulkAction::make('changeStatus')
                         ->label('Durum Değiştir')
                         ->icon('heroicon-o-arrow-path')
                         ->color('warning')

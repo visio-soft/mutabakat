@@ -2,6 +2,13 @@
 
 All notable changes to `mutabakat` will be documented in this file.
 
+## v2.0.0 - 2025-12-17
+
+### Changed
+- Upgraded to FilamentPHP 4
+- Updated minimum PHP version to 8.3
+- Updated all dependencies for Filament 4 compatibility
+
 ## v1.0.0 - 2024-11-15
 
 ### Added

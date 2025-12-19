@@ -1,11 +1,11 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Services;
+namespace Visio\mutabakat\Services;
 
 use App\Models\ParkSession;
 use App\Models\Payment;
-use Visiosoft\Mutabakat\Models\Mutabakat;
-use Visiosoft\Mutabakat\Models\HgsParkTransaction;
+use Visio\mutabakat\Models\Mutabakat;
+use Visio\mutabakat\Models\HgsParkTransaction;
 use Carbon\Carbon;
 
 class MutabakatWidgetService

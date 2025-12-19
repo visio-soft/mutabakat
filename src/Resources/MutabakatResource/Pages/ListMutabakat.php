@@ -1,14 +1,17 @@
 <?php
 
-namespace Visiosoft\Mutabakat\Resources\MutabakatResource\Pages;
+namespace Visio\mutabakat\Resources\MutabakatResource\Pages;
 
-use Visiosoft\Mutabakat\Resources\MutabakatResource;
-use Visiosoft\Mutabakat\Resources\MutabakatResource\Widgets\MutabakatStats;
-use Visiosoft\Mutabakat\Services\MutabakatImportService;
+use Visio\mutabakat\Resources\MutabakatResource;
+use Visio\mutabakat\Resources\MutabakatResource\Widgets\MutabakatStats;
+use Visio\mutabakat\Jobs\MutabakatImportJob;
 use Filament\Actions;
 use Filament\Forms\Components\FileUpload;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ListMutabakat extends ListRecords
 {
@@ -21,20 +24,28 @@ class ListMutabakat extends ListRecords
         return [
 
             Actions\Action::make('import')
-                ->label('Mutabakat İçe Aktar')
+                ->label('Toplu Mutabakat İçe Aktar')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('primary')
                 ->form([
-                    FileUpload::make('file')
+                    FileUpload::make('files')
+                        ->label('Dosyalar')
+                        ->multiple()
+                        ->minFiles(1)
+                        ->maxFiles(50)
                         ->maxSize(10240)
                         ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
                         ->required()
-                        ->helperText('XLSX formatında mutabakat dosyasını yükleyin.')
+                        ->helperText('Bir veya daha fazla XLSX dosyası seçebilirsiniz. Tüm dosyalar arka planda işlenecektir.')
+                        ->directory('mutabakat-imports')
+                        ->preserveFilenames()
+                        ->storeFiles()
                 ])
                 ->action(function ($data) {
-                    $file = $data['file'];
+                    $files = $data['files'] ?? [];
 
-                    if (!$file) {
+                    // Boş kontrolü
+                    if (empty($files)) {
                         Notification::make()
                             ->title('Hata')
                             ->body('Dosya yüklenemedi.')
@@ -43,58 +54,54 @@ class ListMutabakat extends ListRecords
                         return;
                     }
 
-                    try {
-                        $importService = app(MutabakatImportService::class);
+                    // Tek dosya veya çoklu dosya - her zaman array olarak işle
+                    $files = is_array($files) ? $files : [$files];
+                    
+                    // Boş string veya null değerleri filtrele
+                    $files = array_filter($files, fn($f) => !empty($f));
 
-                        // Filament FileUpload'dan gelen dosya yolunu service'e gönder
-                        // $file burada livewire-tmp klasöründeki dosya yolu olacak
-                        $result = $importService->processXlsxFile($file);
-
-                        if ($result['status'] === 'success') {
-                            $reconciliationData = $result['reconciliation'] ?? ['imported' => 0, 'duplicates' => 0, 'errors' => []];
-                            $parkSessionData = $result['park_sessions'] ?? ['imported' => 0, 'duplicates' => 0, 'errors' => []];
-                            
-                            $totalImported = $reconciliationData['imported'] + $parkSessionData['imported'];
-                            $totalDuplicates = $reconciliationData['duplicates'] + $parkSessionData['duplicates'];
-                            $totalErrors = array_merge($reconciliationData['errors'], $parkSessionData['errors']);
-
-                            $message = "İçe Aktarım Tamamlandı:\n";
-                            $message .= "• Mutabakat: {$reconciliationData['imported']} kayıt\n";
-                            $message .= "• Park Oturumları: {$parkSessionData['imported']} kayıt\n";
-                            $message .= "• Toplam: {$totalImported} kayıt başarıyla aktarıldı";
-
-                            if ($totalDuplicates > 0) {
-                                $message .= "\n• {$totalDuplicates} duplicate kayıt atlandı";
-                            }
-
-                            if (!empty($totalErrors)) {
-                                $message .= "\n• " . count($totalErrors) . " satırda hata oluştu";
-                            }
-
-                            Notification::make()
-                                ->title('İçe Aktarım Başarılı')
-                                ->body($message)
-                                ->success()
-                                ->send();
-
-                            // Sayfayı yenile
-                            $this->redirect(request()->header('Referer'));
-                        } else {
-                            Notification::make()
-                                ->title('İçe Aktarım Hatası')
-                                ->body(implode(', ', $result['errors']))
-                                ->danger()
-                                ->send();
-                        }
-                    } catch (\Exception $e) {
+                    if (empty($files)) {
                         Notification::make()
                             ->title('Hata')
-                            ->body('Dosya işlenirken bir hata oluştu: ' . $e->getMessage())
+                            ->body('Geçerli dosya bulunamadı.')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    $userId = Auth::id();
+                    $dispatchedCount = 0;
+
+                    foreach ($files as $file) {
+                        try {
+                            // Job'u dispatch et
+                            MutabakatImportJob::dispatch($file, $userId);
+                            $dispatchedCount++;
+                        } catch (\Exception $e) {
+                            Log::error('MutabakatImportJob dispatch hatası', [
+                                'file' => $file,
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                    }
+
+                    $fileText = $dispatchedCount === 1 ? '1 dosya' : "{$dispatchedCount} dosya";
+
+                    if ($dispatchedCount > 0) {
+                        Notification::make()
+                            ->title('İçe Aktarım Başlatıldı')
+                            ->body("{$fileText} arka planda işlenmek üzere kuyruğa eklendi. İşlem tamamlandığında sonuçlar log'lara kaydedilecektir.")
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('Hata')
+                            ->body('Hiçbir dosya kuyruğa eklenemedi.')
                             ->danger()
                             ->send();
                     }
                 })
-                ->modalHeading('Mutabakat İçe Aktar'),
+                ->modalHeading('Toplu Mutabakat İçe Aktar'),
 
         ];
     }
