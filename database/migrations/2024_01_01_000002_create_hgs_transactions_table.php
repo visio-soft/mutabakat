@@ -28,7 +28,6 @@ return new class extends Migration
             $table->string('row_hash', 32)->unique();
             $table->timestamps();
             $table->softDeletes();
-
             $table->index(['park_id', 'provision_date']);
             $table->index(['plate', 'entry_date']);
             $table->index('reference_number');

@@ -12,12 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('parks', function (Blueprint $table) {
-            // Eğer eski kolon varsa rename yap, yoksa yeni oluştur
-            if (Schema::hasColumn('parks', 'reconciliation_park_name')) {
-                $table->renameColumn('reconciliation_park_name', 'mutabakat_park_name');
-            } elseif (!Schema::hasColumn('parks', 'mutabakat_park_name')) {
-                $table->string('mutabakat_park_name')->nullable()->after('name');
-            }
+            $table->string('mutabakat_park_name')->nullable()->after('name');
         });
     }
 
